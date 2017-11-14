@@ -1,0 +1,10 @@
+httplib2
+ujson
+flask
+fapws3
+ase
+pycodcif
+spglib==1.9.5
+pandas
+sklearn
+mpds_client
