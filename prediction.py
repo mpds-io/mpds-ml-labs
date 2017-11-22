@@ -26,23 +26,17 @@ human_names = {
         'symbol': 'C<sub>p</sub>',
         'rounding': 0
     },
-    'w': {
-        'name': 'band gap',
-        'units': 'eV',
-        'symbol': 'e<sub>dir. or undir.</sub>',
-        'rounding': 1
-    },
-    'u': {
-        'name': 'electrical resistivity',
-        'units': 'Omega m',
-        'symbol': 'R',
-        'rounding': 6
-    },
     'k': {
         'name': 'Seebeck coefficient',
         'units': 'muV K-1',
         'symbol': 'S',
         'rounding': 1
+    },
+    'm': {
+        'name': 'temperature for congruent melting',
+        'units': 'K',
+        'symbol': 'T<sub>melt</sub>',
+        'rounding': 0
     }
 }
 
@@ -68,23 +62,25 @@ pmin, pmax = 1, max(periodic_numbers)
 periodic_numbers_normed = [(i - pmin)/(pmax - pmin) for i in periodic_numbers]
 
 
-def get_descriptor(ase_obj, kappa=10):
+def get_descriptor(ase_obj, kappa=10, overreach=False):
     """
     From ASE object obtain
     a vectorized atomic structure
     populated to a certain fixed (relatively big) volume
     defined by kappa
     """
+    if overreach: kappa *= 2
+
     norms = np.array([ np.linalg.norm(vec) for vec in ase_obj.get_cell() ])
     multiple = np.ceil(kappa / norms).astype(int)
     ase_obj = ase_obj.repeat(multiple)
     com = ase_obj.get_center_of_mass() # NB use recent ase version here, because of the new element symbols
     ase_obj.translate(-com)
-    del ase_obj[[atom.index for atom in ase_obj if np.sqrt(np.dot(atom.position, atom.position)) >= np.sqrt(kappa ** 2)]]
+    del ase_obj[[atom.index for atom in ase_obj if np.sqrt(np.dot(atom.position, atom.position)) > kappa]]
 
     ase_obj.center()
     ase_obj.set_pbc((False, False, False))
-    sorted_seq = np.argsort(ase_obj.positions[:, 2])
+    sorted_seq = np.argsort(np.fromiter((np.sqrt(np.dot(x, x)) for x in ase_obj.positions), np.float))
     ase_obj = ase_obj[sorted_seq]
 
     DV = []

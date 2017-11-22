@@ -8,3 +8,4 @@ spglib==1.9.5
 pandas
 sklearn
 mpds_client
+progressbar

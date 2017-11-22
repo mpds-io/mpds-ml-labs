@@ -3,6 +3,7 @@ from __future__ import division
 import os, sys
 import time
 import random
+from progressbar import ProgressBar
 
 import numpy as np
 import pandas as pd
@@ -32,7 +33,7 @@ def get_regr(a=None, b=None):
     )
 
 
-def estimate_quality(algo, args, values, attempts=40, nsamples=40):
+def estimate_quality(algo, args, values, attempts=30, nsamples=0.4):
     results = []
     for _ in range(attempts):
         X_train, X_test, y_train, y_test = train_test_split(args, values, test_size=nsamples)
@@ -75,14 +76,18 @@ def mpds_get_data(prop_id):
         ]},
         columns=['Compound', 'Phase', 'Value', 'Units', 'Cunits', 'Cname', 'Cvalue']
     )
+    props['Value'] = props['Value'].astype('float64') # to treat values out of bounds given as str
     props = props[np.isfinite(props['Phase'])]
     props = props[props['Units'] == human_names[prop_id]['units']]
+
     if prop_id == 'w': # to filter several abnormal values
         props = props[(props['Value'] > 0) & (props['Value'] < 20)]
-    # TODO
+    elif prop_id == 'u': # to filter negative deltas
+        props = props[props['Value'] > 0]
 
-    to_drop = props[(props['Cname'] == 'Temperature') & (props['Cunits'] == 'K') & (props['Cvalue'] > 500)]
-    print("Rows with high-T values to drop:", len(to_drop))
+    to_drop = props[(props['Cname'] == 'Temperature') & (props['Cunits'] == 'K') & ((props['Cvalue'] < 200) | (props['Cvalue'] > 400))]
+
+    print("Rows to drop by criteria: %s" % len(to_drop))
     props.drop(to_drop.index, inplace=True)
 
     phases_compounds = dict(zip(props['Phase'], props['Compound'])) # keep the mapping for future
@@ -91,21 +96,23 @@ def mpds_get_data(prop_id):
 
     print("Got %s distinct crystalline phases" % len(phases))
 
-    min_descriptor_len, max_descriptor_len = 120, 1200
-    data_by_phases = {}
+    min_descriptor_len = 150
+    max_descriptor_len = min_descriptor_len*10
 
-    for item in client.get_data(
+    data_by_phases = {}
+    for item in pbar(client.get_data(
         {"props": "atomic structure"},
         fields={'S':['phase_id', 'entry', 'chemical_formula', 'cell_abc', 'sg_n', 'setting', 'basis_noneq', 'els_noneq']},
         phases=phases
-    ):
+    )):
         crystal = MPDSDataRetrieval.compile_crystal(item, 'ase')
         if not crystal: continue
         descriptor = get_descriptor(crystal)
 
         if len(descriptor) < min_descriptor_len:
-            print("Entry %s: not enough atoms, cannot get reliable desciptor" % item[1])
-            continue
+            descriptor = get_descriptor(crystal, overreach=True)
+            if len(descriptor) < min_descriptor_len:
+                continue
 
         if len(descriptor) < max_descriptor_len:
             max_descriptor_len = len(descriptor)
