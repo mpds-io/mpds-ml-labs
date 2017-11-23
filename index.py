@@ -1,12 +1,9 @@
 
-import sys
+import os, sys
 
 import ujson as json
 
-from flask import Flask, Blueprint, Response, request
-
-import fapws._evwsgi as evwsgi
-from fapws import base
+from flask import Flask, Blueprint, Response, request, send_from_directory
 
 from cors import crossdomain
 from struct_utils import detect_format, poscar_to_ase, symmetrize
@@ -25,7 +22,19 @@ def is_plain_text(test):
     except: return False
     else: return True
 
-@app_labs.route("/", methods=['POST'])
+@app_labs.route('/', methods=['GET'])
+def index():
+    return send_from_directory(os.path.dirname(__file__), 'index.html')
+
+@app_labs.route('/index.css', methods=['GET'])
+def style():
+    return send_from_directory(os.path.dirname(__file__), 'index.css')
+
+@app_labs.route('/player.html', methods=['GET'])
+def player():
+    return send_from_directory(os.path.dirname(__file__), 'player.html')
+
+@app_labs.route("/predict", methods=['POST'])
 @crossdomain(origin='*')
 def predict():
     if 'structure' not in request.values:
@@ -88,9 +97,7 @@ if __name__ == '__main__':
     app = Flask(__name__)
     app.debug = False
     app.register_blueprint(app_labs)
+    app.run()
 
-    evwsgi.start('0.0.0.0', '8523')
-    evwsgi.set_base_module(base)
-    evwsgi.wsgi_cb(('/', app))
-    evwsgi.set_debug(0)
-    evwsgi.run()
+    # NB an external WSGI-compliant server is a must
+    # while exposing to the outer world

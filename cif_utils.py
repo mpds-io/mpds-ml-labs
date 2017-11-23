@@ -39,7 +39,7 @@ def cif_to_ase(cif_string):
             except ValueError:
                 return None, 'Invalid space group info in CIF'
         elif '_symmetry_space_group_name_h-m' in parsed_cif:
-            spacegroup = parsed_cif['_symmetry_space_group_name_h-m'][0].replace(' ', '').strip()
+            spacegroup = parsed_cif['_symmetry_space_group_name_h-m'][0].strip() # NB ase is very strict to spaces in HM symbols, so this is the most frequent error source
             if not spacegroup:
                 return None, 'Empty space group info in CIF'
         else:
