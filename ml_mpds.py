@@ -80,9 +80,13 @@ def mpds_get_data(prop_id):
     props = props[np.isfinite(props['Phase'])]
     props = props[props['Units'] == human_names[prop_id]['units']]
 
-    if prop_id == 'w': # to filter several abnormal values
+    # filtering some abnormal values
+    # these should be corrected by LPF editors soon
+    if prop_id == 'z':
+        props = props[props['Value'] < 2000]
+    elif prop_id == 'w':
         props = props[(props['Value'] > 0) & (props['Value'] < 20)]
-    elif prop_id == 'u': # to filter negative deltas
+    elif prop_id == 'u':
         props = props[props['Value'] > 0]
 
     to_drop = props[(props['Cname'] == 'Temperature') & (props['Cunits'] == 'K') & ((props['Cvalue'] < 200) | (props['Cvalue'] > 400))]
@@ -96,10 +100,11 @@ def mpds_get_data(prop_id):
 
     print("Got %s distinct crystalline phases" % len(phases))
 
-    min_descriptor_len = 150
+    min_descriptor_len = 220
     max_descriptor_len = min_descriptor_len*10
-
     data_by_phases = {}
+
+    pbar = ProgressBar()
     for item in pbar(client.get_data(
         {"props": "atomic structure"},
         fields={'S':['phase_id', 'entry', 'chemical_formula', 'cell_abc', 'sg_n', 'setting', 'basis_noneq', 'els_noneq']},

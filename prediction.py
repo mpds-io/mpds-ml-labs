@@ -62,7 +62,7 @@ pmin, pmax = 1, max(periodic_numbers)
 periodic_numbers_normed = [(i - pmin)/(pmax - pmin) for i in periodic_numbers]
 
 
-def get_descriptor(ase_obj, kappa=10, overreach=False):
+def get_descriptor(ase_obj, kappa=18, overreach=False):
     """
     From ASE object obtain
     a vectorized atomic structure
@@ -130,23 +130,25 @@ def get_legend(pred_dict):
 
 def ase_to_ml_model(ase_obj, ml_model):
     result = {}
-    descriptor = get_descriptor(ase_obj)
-    cdim = len(descriptor)
+    descriptor = get_descriptor(ase_obj, overreach=True)
+    d_dim = len(descriptor)
 
     if not ml_model: # testing
 
-        test_prop = np.sum(descriptor)
-        return {prop_id: test_prop for prop_id in human_names.keys()}, None
+        test_prop = round(np.sum(descriptor))
+        return {prop_id: {'value': test_prop, 'mae': 0, 'r2': 0} for prop_id in human_names.keys()}, None
 
     for prop_id, regr in ml_model.items(): # production
 
-        if cdim < regr.n_features_:
+        if d_dim < regr.n_features_:
             continue
-        elif cdim > regr.n_features_:
-            descriptor = descriptor[:regr.n_features_]
+        elif d_dim > regr.n_features_:
+            d_input = descriptor[:regr.n_features_]
+        else:
+            d_input = descriptor[:]
 
         try:
-            prediction = regr.predict([descriptor])[0]
+            prediction = regr.predict([d_input])[0]
         except Exception as e:
             return None, str(e)
 
