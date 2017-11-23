@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Data-driven predictions from the crystalline structure</title>
+<meta charset="utf-8" />
+<link rel="stylesheet" type="text/css" href="index.css" />
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+</head>
+<body>
+<div id="preloader"><div class="rect1"></div><div class="rect2"></div><div class="rect3"></div><div class="rect4"></div><div class="rect5"></div></div>
+
+<div id="header" class="content"><div id="logo"></div><h1>Data-driven predictions from the crystalline structure</h1></div>
+
+<div id="results" class="content">
+    <div id="resultbox"></div>
+
+    <div id="ctrlbox">
+        <div id="refresh_trigger" class="button">Try another</div>
+    </div>
+</div>
+
+<div id="playerbox" class="content"></div>
+
+<div id="inputbox" class="content">
+    <p>This is the proof of concept &mdash; how a relatively unsophisticated statistical model (<a href="http://scikit-learn.org/stable/modules/ensemble.html" target="_blank">random forest regressor</a>) trained on the large <a href="https://mpds.io" target="_blank">MPDS dataset</a> predicts physical properties from the only crystalline structure. Please, paste your structure in CIF or POSCAR format below and hit SUBMIT. The result will NOT be public.</p>
+    <textarea id="input">
+
+    </textarea>
+    <div id="fileapi_container"><div>Alternatively, either select the file from <span>your filesystem</span>, or drag and drop the file into this window.</div><input type="file" id="fileapi" /></div>
+    <div id="predict_trigger" class="button">Submit</div>
+</div>
+
+<div id="footer">Created by <a href="https://mpds.io" target="_blank">MPDS</a> using <a href="https://wiki.fysik.dtu.dk/ase" target="_blank">ase</a>, <a href="http://wiki.crystallography.net/cod-tools/CIF-parser" target="_blank">pycodcif</a>, <a href="https://atztogo.github.io/spglib" target="_blank">spglib</a>, <a href="http://tilde-lab.github.io/player.html" target="_blank">cifplayer</a> <i>etc.</i> The code is <a href="https://github.com/mpds-io/mpds-ml-labs" target="_blank">open-source</a>.</div>
+
+<div id="ribbon" class="github-fork-ribbon-wrapper right"><div class="github-fork-ribbon"><a href="https://github.com/mpds-io/mpds-ml-labs" target="_blank">See on GitHub</a></div></div>
+
+<script type="text/javascript">
+"use strict";
+window.req_endpoint = (window.location.host.indexOf('localhost')==-1) ? 'https://tilde.pro/labs/predict' : 'http://localhost:5000/predict';
+window.local_supported = window.File && window.FileReader && window.FileList && window.Blob;
+window.playerdata = null;
+
+function show_preloader(){ $('#preloader').show(); }
+
+function hide_preloader(){ $('#preloader').hide(); }
+
+function cancel_event(evt){
+    evt = evt || window.event;
+    if (evt.cancelBubble) evt.cancelBubble = true;
+    else {
+        if (evt.stopPropagation) evt.stopPropagation();
+        if (evt.preventDefault) evt.preventDefault();
+    }
+}
+
+function handleFileSelect(evt){
+    cancel_event(evt);
+
+    if (evt.dataTransfer.files.length > 1)
+        return alert('Error: only one file at the time may be rendered');
+
+    var file = evt.dataTransfer.files[0];
+    if (!file || !file.size)
+        return alert('Error: this file cannot be read (unaccessible?)');
+
+    var reader = new FileReader();
+
+    reader.onloadend = function(evt){
+        $('#input').val(evt.target.result.replace(/(\r\n|\r)/gm, "\n"));
+    }
+    reader.abort = function(){ alert('Error: file reading has been cancelled') }
+    reader.onerror = function(){ alert('Error: file reading has been cancelled') }
+
+    reader.readAsText(file);
+}
+
+function handleDragOver(evt){
+    cancel_event(evt);
+    evt.dataTransfer.dropEffect = 'copy';
+}
+
+function process_result(data){
+    if (data.error) return alert(data.error);
+
+    $('#inputbox').hide();
+    $('#results').show();
+
+    var result_html = '<ul>';
+
+    $.each(data.prediction, function(key, item){
+        result_html += '<li>' + data.legend[key].name + ' <i>' + data.legend[key].symbol + '</i> = ' + item.value + ' ' + data.legend[key].units + ' (avg. mean abs. error = ' + item.mae + ' ' + data.legend[key].units + ')';
+    });
+
+    $('#resultbox').html(result_html + '</ul>').show();
+
+    window.playerdata = data.p1_cif;
+    $('#playerbox').empty().html('<iframe frameborder=0 scrolling="no" width="100%" height="600" src="player.html"></iframe>').show();
+}
+
+$(document).ready(function(){
+
+    if (window.local_supported){
+        $('#fileapi_container').show();
+
+        window.addEventListener('dragover', handleDragOver, false);
+        window.addEventListener('drop', handleFileSelect, false);
+
+        var fileapi = document.getElementById('fileapi'),
+            reader = new FileReader();
+        fileapi.onchange = function(){
+            if (!this.files[0] || !this.files[0].size) return alert('Error: this file cannot be read (unaccessible?)');
+            reader.currentFilename = this.files[0].name;
+            reader.readAsText(this.files[0]);
+        }
+        reader.onloadend = function(evt){
+            $('#input').val(evt.target.result.replace(/(\r\n|\r)/gm, "\n"));
+        }
+    }
+
+    $('#predict_trigger').click(function(){
+        if ($(this).data('busy')) return;
+        $(this).data('busy', true).text('Busy...');
+
+        $.ajax({type: 'POST', url: window.req_endpoint, data: {
+            structure: $('#input').val()
+
+        }, beforeSend: show_preloader}).always(function(){
+            $('#predict_trigger').data('busy', false).text('Submit');
+            hide_preloader();
+
+        }).done(function(data){
+            process_result(data);
+
+        }).fail(function(xhr, textStatus, errorThrown){
+            $('#predict_trigger').data('busy', false).text('Submit');
+            if (xhr.responseJSON && xhr.responseJSON.error) alert(xhr.responseJSON.error);
+            else alert('A network error occured. Please, try again');
+
+        });
+    });
+
+    $('#refresh_trigger').click(function(){
+        document.location.reload();
+    });
+
+});
+</script>
+</body>
+</html>
