@@ -44,6 +44,6 @@ curl -XPOST https://tilde.pro/labs/predict -d "structure=data_in_POSCAR"
 License
 ------
 
-The client and the server code: *MIT*
-The [open part](https://mpds.io/open-data-api) of the MPDS data (5%): *CC BY 4.0*
-The closed part of the MPDS data (95%): *commercial*
+- The client and the server code: *MIT*
+- The [open part](https://mpds.io/open-data-api) of the MPDS data (5%): *CC BY 4.0*
+- The closed part of the MPDS data (95%): *commercial*
