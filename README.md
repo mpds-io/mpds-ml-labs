@@ -1,10 +1,12 @@
 Data-driven predictions from the crystalline structure
 ======
 
+![Materials simulations ab datum](https://raw.githubusercontent.com/mpds-io/mpds-ml-labs/master/crystallographer_mpds_cc_by_40.png "Materials simulation ab datum")
+
 Rationale
 ------
 
-This is the proof of concept, how a relatively unsophisticated statistical model (namely, random forest regressor) trained on the large MPDS dataset predicts a set of physical properties from the only crystalline structure. Similarly to _ab initio_, it could be called _ab datum_. (Note however that the simulation of physical properties with a comparable precision normally takes days, weeks or even months, whereas the present prediction method takes less than a second.) A crystal structure in either CIF or POSCAR format is required.
+This is the proof of concept, how a relatively unsophisticated statistical model (namely, random forest regressor) trained on the large MPDS dataset predicts a set of physical properties from the only crystalline structure. Similarly to _ab initio_, this method could be called _ab datum_. (Note however that the simulation of physical properties with a comparable precision normally takes days, weeks or even months, whereas the present prediction method takes less than a second.) A crystal structure in either CIF or POSCAR format is required.
 
 Installation
 ------
@@ -25,7 +27,7 @@ The model is trained on the MPDS data using the MPDS API and the script `ml_mpds
 Architecture and usage
 ------
 
-This is a client-server application. The client is not required although, and it is possible to employ the server code as a standalone command-line application. The client is used for a more convenient demonstration only. The client and the server communicate using HTTP. Any client able to execute HTTP requests is supported, be it a `curl` command-line client or rich web-browser user interface. As an example of the latter, a simple HTML5 app `index.html` is supplied. Server part is a Flask app, loading the pre-trained ML models:
+This is the client-server application. The client is not required although, and it is possible to employ the server code as a standalone command-line application. The client is used for a convenience only. The client and the server communicate using HTTP. Any client able to execute HTTP requests is supported, be it a `curl` command-line client or rich web-browser user interface. As an example of the latter, a simple HTML5 app `index.html` is supplied. Server part is a Flask app, loading the pre-trained ML models:
 
 ```python
 python index.py /tmp/path_to_model_one /tmp/path_to_model_two
@@ -36,9 +38,16 @@ Web-browser user interface is then available under `http://localhost:5000`. To s
 API
 ------
 
+At the local server:
+
 ```shell
-curl -XPOST http://localhost:5000/predict -d "structure=data_in_CIF"
-curl -XPOST https://tilde.pro/labs/predict -d "structure=data_in_POSCAR"
+curl -XPOST http://localhost:5000/predict -d "structure=data_in_CIF_or_POSCAR"
+```
+
+At the remote Tilde server (may be switched off):
+
+```shell
+curl -XPOST https://tilde.pro/services/predict -d "structure=data_in_CIF_or_POSCAR"
 ```
 
 License
