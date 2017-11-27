@@ -96,7 +96,7 @@ def mpds_get_data(prop_id):
 
     phases_compounds = dict(zip(props['Phase'], props['Compound'])) # keep the mapping for future
     avgprops = props.groupby('Phase')['Value'].mean().to_frame().reset_index().rename(columns={'Value': 'Avgvalue'})
-    phases = avgprops['Phase'].astype(int).tolist()
+    phases = np.unique(avgprops['Phase'].astype(int)).tolist()
 
     print("Got %s distinct crystalline phases" % len(phases))
 
@@ -147,7 +147,7 @@ def mpds_get_data(prop_id):
 
     print("Done %s rows in %1.2f sc" % (len(struct_props), time.time() - starttime))
 
-    export_file = MPDSExport.export_df(struct_props, prop_id)
+    export_file = MPDSExport.save_df(struct_props, prop_id)
     print("Saving %s" % export_file)
 
     return struct_props
@@ -215,7 +215,7 @@ if __name__ == "__main__":
         regr.metadata = {'mae': avg_mae, 'r2': round(avg_r2, 2)}
 
         if tag:
-            export_file = MPDSExport.export_model(regr, tag)
+            export_file = MPDSExport.save_model(regr, tag)
             print("Saving %s" % export_file)
 
     else: raise RuntimeError("Unrecognized argument: %s" % arg)
