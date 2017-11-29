@@ -102,7 +102,7 @@ function process_result(data){
     var result_html = '<ul>';
 
     $.each(data.prediction, function(key, item){
-        result_html += '<li>' + data.legend[key].name + ' <i>' + data.legend[key].symbol + '</i> = ' + item.value + ' ' + data.legend[key].units + ' (avg. mean abs. error = ' + item.mae + ' ' + data.legend[key].units + ')';
+        result_html += '<li>' + data.legend[key].name + ' <i>' + data.legend[key].symbol + '</i> = ' + item.value + ' ' + data.legend[key].units + ' (mean abs. error = ' + item.mae + ' ' + data.legend[key].units + ')';
     });
 
     $('#resultbox').html(result_html + '</ul>').show();
