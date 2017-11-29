@@ -23,9 +23,23 @@
 
 <div id="inputbox" class="content">
     <p>This is the proof of concept &mdash; how a relatively unsophisticated statistical model (<a href="http://scikit-learn.org/stable/modules/ensemble.html" target="_blank">random forest regressor</a>) trained on the large <a href="https://mpds.io" target="_blank">MPDS dataset</a> predicts physical properties from the only crystalline structure. Please, paste your structure in CIF or POSCAR format below and hit SUBMIT. The result will NOT be public.</p>
-    <textarea id="input">
+    <textarea id="input">data_example
+_cell_length_a    4.07
+_cell_length_b    4.07
+_cell_length_c    4.07
+_cell_angle_alpha 90
+_cell_angle_beta  90
+_cell_angle_gamma 90
+_symmetry_Int_Tables_number    225
+_symmetry_space_group_name_H-M Fm-3m
 
-    </textarea>
+loop_
+ _atom_site_type_symbol
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Au 0.0 0.0 0.0 1.0</textarea>
     <div id="fileapi_container"><div>Alternatively, either select the file from <span>your filesystem</span>, or drag and drop the file into this window.</div><input type="file" id="fileapi" /></div>
     <div id="predict_trigger" class="button">Submit</div>
 </div>

@@ -157,7 +157,11 @@ if __name__ == "__main__":
     try:
         arg = sys.argv[1]
     except IndexError:
-        raise RuntimeError("\n\nWhat to do?\n\nPlease, provide a *prop_id* letter OR data *filename*")
+        sys.exit(
+            "What to do?\n"
+            "Please, provide either a *prop_id* letter (%s) for a property data to be downloaded,\n"
+            "or a data *filename* generated after a property data download." % ", ".join(human_names.keys())
+        )
 
     if arg in human_names.keys():
 
