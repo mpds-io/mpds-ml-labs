@@ -84,6 +84,6 @@ This project is built on top of the following open-source scientific software:
 License
 ------
 
-- The client and the server code: *MIT*
+- The client and the server code: *LGPL-2.1+*
 - The [open part](https://mpds.io/open-data-api) of the MPDS data (5%): *CC BY 4.0*
 - The closed part of the MPDS data (95%): *commercial*
