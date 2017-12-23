@@ -9,39 +9,12 @@ import numpy as np
 from mpds_client import MPDSDataRetrieval, APIError
 
 from prediction import human_names
-from struct_utils import detect_format, poscar_to_ase, symmetrize
+from struct_utils import detect_format, poscar_to_ase, symmetrize, get_formula
 from cif_utils import cif_to_ase
 
 
 req = httplib2.Http()
 client = MPDSDataRetrieval()
-
-def get_reduced_formula(ase_obj):
-    formula_sequence = ['Fr','Cs','Rb','K','Na','Li',  'Be','Mg','Ca','Sr','Ba','Ra',  'Sc','Y','La','Ce','Pr','Nd','Pm','Sm','Eu','Gd','Tb','Dy','Ho','Er','Tm','Yb',  'Ac','Th','Pa','U','Np','Pu',  'Ti','Zr','Hf',  'V','Nb','Ta',  'Cr','Mo','W',  'Fe','Ru','Os',  'Co','Rh','Ir',  'Mn','Tc','Re',  'Ni','Pd','Pt',  'Cu','Ag','Au',  'Zn','Cd','Hg',  'B','Al','Ga','In','Tl',  'Pb','Sn','Ge','Si','C',   'N','P','As','Sb','Bi',   'H',   'Po','Te','Se','S','O',  'At','I','Br','Cl','F',  'He','Ne','Ar','Kr','Xe','Rn']
-    labels = {}
-    types = []
-    count = 0
-
-    for k, label in enumerate(ase_obj.get_chemical_symbols()):
-        if label not in labels:
-            labels[label] = count
-            types.append([k+1])
-            count += 1
-        else:
-            types[ labels[label] ].append(k+1)
-
-    atoms = labels.keys()
-    atoms = [x for x in formula_sequence if x in atoms] + [x for x in atoms if x not in formula_sequence]
-    formula = ''
-    for atom in atoms:
-        n = len(types[labels[atom]])
-        if n == 1:
-            n = ''
-        else:
-            n = str(n)
-        formula += atom + n
-
-    return formula
 
 def sgn_to_crsystem(number):
     if   195 <= number <= 230:
@@ -98,7 +71,7 @@ if __name__ == '__main__':
     if 'error' in answer:
         raise RuntimeError(answer['error'])
 
-    formulae_categ, lattices_categ = get_reduced_formula(ase_obj), sgn_to_crsystem(ase_obj.info['spacegroup'].no)
+    formulae_categ, lattices_categ = get_formula(ase_obj), sgn_to_crsystem(ase_obj.info['spacegroup'].no)
     for prop_id, pdata in human_names.items():
         try:
             resp = client.get_dataframe({

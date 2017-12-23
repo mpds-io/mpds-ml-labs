@@ -6,7 +6,7 @@ import ujson as json
 from flask import Flask, Blueprint, Response, request, send_from_directory
 
 from cors import crossdomain
-from struct_utils import detect_format, poscar_to_ase, symmetrize
+from struct_utils import detect_format, poscar_to_ase, symmetrize, get_formula
 from cif_utils import cif_to_ase, ase_to_eq_cif
 from prediction import ase_to_ml_model, get_legend, load_ml_model
 
@@ -21,6 +21,21 @@ def is_plain_text(test):
     try: test.decode('ascii')
     except: return False
     else: return True
+
+def html_formula(string):
+    sub, html_formula = False, ''
+    for n, i in enumerate(string):
+        if i.isdigit() or i=='.' or i=='-':
+            if not sub:
+                html_formula += '<sub>'
+                sub = True
+        else:
+            if sub and i != 'd':
+                html_formula += '</sub>'
+                sub = False
+        html_formula += i
+    if sub: html_formula += '</sub>'
+    return html_formula
 
 @app_labs.route('/', methods=['GET'])
 def index():
@@ -80,6 +95,7 @@ def predict():
         json.dumps({
             'prediction': prediction,
             'legend': get_legend(prediction),
+            'formula': html_formula(get_formula(ase_obj)),
             'p1_cif': ase_to_eq_cif(ase_obj)
             }, indent=4, escape_forward_slashes=False
         ),

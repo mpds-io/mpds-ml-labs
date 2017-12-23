@@ -22,7 +22,7 @@
 <div id="playerbox" class="content"></div>
 
 <div id="inputbox" class="content">
-    <p>This is the proof of concept &mdash; how a relatively unsophisticated statistical model (<a href="http://scikit-learn.org/stable/modules/ensemble.html" target="_blank">random forest regressor</a>) trained on the large <a href="https://mpds.io" target="_blank">MPDS dataset</a> predicts physical properties from the only crystalline structure. Please, paste your structure in CIF or POSCAR format below and hit SUBMIT. The result will NOT be public.</p>
+    <p>This is the proof of concept &mdash; how a relatively unsophisticated statistical model (<a href="https://en.wikipedia.org/wiki/Random_forest" target="_blank">random forest regressor</a>) trained on the large <a href="https://mpds.io" target="_blank">MPDS dataset</a> predicts physical properties from the only crystalline structure. Please, paste your structure in CIF or POSCAR format below and hit SUBMIT. The result will NOT be public.</p>
     <textarea id="input">data_example
 _cell_length_a    4.07
 _cell_length_b    4.07
@@ -104,8 +104,10 @@ function process_result(data){
     $.each(data.prediction, function(key, item){
         result_html += '<li>' + data.legend[key].name + ' <i>' + data.legend[key].symbol + '</i> = ' + item.value + ' ' + data.legend[key].units + ' (mean abs. error = ' + item.mae + ' ' + data.legend[key].units + ')';
     });
+    result_html += '</ul>';
 
-    $('#resultbox').html(result_html + '</ul>').show();
+    $('#resultbox').html(result_html).show();
+    $('h1').html(data.formula);
 
     window.playerdata = data.p1_cif;
     $('#playerbox').empty().html('<iframe frameborder=0 scrolling="no" width="100%" height="600" src="player.html"></iframe>').show();
