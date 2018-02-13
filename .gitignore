@@ -1,0 +1,13 @@
+*.py[co]
+*DS_Store*
+pip-selfcheck.json
+pip-log.txt
+nohup.out
+/bin
+/include
+/lib
+/share
+/local
+/src
+/eggs
+/man
