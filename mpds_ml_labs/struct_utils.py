@@ -1,5 +1,6 @@
 
 import re
+import fractions
 import cStringIO
 
 from ase.atoms import Atoms
@@ -87,30 +88,45 @@ def symmetrize(ase_obj, accuracy=1E-03):
         return None, 'Unrecognized sites or invalid site symmetry in structure'
 
 
-def get_formula(ase_obj):
-    formula_sequence = ['Fr','Cs','Rb','K','Na','Li',  'Be','Mg','Ca','Sr','Ba','Ra',  'Sc','Y','La','Ce','Pr','Nd','Pm','Sm','Eu','Gd','Tb','Dy','Ho','Er','Tm','Yb',  'Ac','Th','Pa','U','Np','Pu',  'Ti','Zr','Hf',  'V','Nb','Ta',  'Cr','Mo','W',  'Fe','Ru','Os',  'Co','Rh','Ir',  'Mn','Tc','Re',  'Ni','Pd','Pt',  'Cu','Ag','Au',  'Zn','Cd','Hg',  'B','Al','Ga','In','Tl',  'Pb','Sn','Ge','Si','C',   'N','P','As','Sb','Bi',   'H',   'Po','Te','Se','S','O',  'At','I','Br','Cl','F',  'He','Ne','Ar','Kr','Xe','Rn']
+FORMULA_SEQUENCE = ['Fr','Cs','Rb','K','Na','Li',  'Be','Mg','Ca','Sr','Ba','Ra',  'Sc','Y','La','Ce','Pr','Nd','Pm','Sm','Eu','Gd','Tb','Dy','Ho','Er','Tm','Yb',  'Ac','Th','Pa','U','Np','Pu',  'Ti','Zr','Hf',  'V','Nb','Ta',  'Cr','Mo','W',  'Fe','Ru','Os',  'Co','Rh','Ir',  'Mn','Tc','Re',  'Ni','Pd','Pt',  'Cu','Ag','Au',  'Zn','Cd','Hg',  'B','Al','Ga','In','Tl',  'Pb','Sn','Ge','Si','C',   'N','P','As','Sb','Bi',   'H',   'Po','Te','Se','S','O',  'At','I','Br','Cl','F',  'He','Ne','Ar','Kr','Xe','Rn']
 
-    labels = {}
-    types = []
-    count = 0
+def get_formula(ase_obj, find_gcd=True):
+    parsed_formula = {}
 
-    for k, label in enumerate(ase_obj.get_chemical_symbols()):
-        if label not in labels:
-            labels[label] = count
-            types.append([k+1])
-            count += 1
+    for label in ase_obj.get_chemical_symbols():
+        if label not in parsed_formula:
+            parsed_formula[label] = 1
         else:
-            types[ labels[label] ].append(k+1)
+            parsed_formula[label] += 1
 
-    atoms = labels.keys()
-    atoms = [x for x in formula_sequence if x in atoms] + [x for x in atoms if x not in formula_sequence]
+    expanded = reduce(fractions.gcd, parsed_formula.values()) if find_gcd else 1
+    if expanded > 1:
+        parsed_formula = {el: int(content / float(expanded))
+                        for el, content in parsed_formula.items()}
+
+    atoms = parsed_formula.keys()
+    atoms = [x for x in FORMULA_SEQUENCE if x in atoms] + [x for x in atoms if x not in FORMULA_SEQUENCE]
     formula = ''
     for atom in atoms:
-        n = len(types[labels[atom]])
-        if n == 1:
-            n = ''
-        else:
-            n = str(n)
-        formula += atom + n
+        index = parsed_formula[atom]
+        index = '' if index == 1 else str(index)
+        formula += atom + index
 
     return formula
+
+
+def sgn_to_crsystem(number):
+    if   195 <= number <= 230:
+        return 'cubic'
+    elif 168 <= number <= 194:
+        return 'hexagonal'
+    elif 143 <= number <= 167:
+        return 'trigonal'
+    elif 75  <= number <= 142:
+        return 'tetragonal'
+    elif 16  <= number <= 74:
+        return 'orthorhombic'
+    elif 3   <= number <= 15:
+        return 'monoclinic'
+    else:
+        return 'triclinic'

@@ -5,14 +5,15 @@ import ujson as json
 
 from flask import Flask, Blueprint, Response, request, send_from_directory
 
-from cors import crossdomain
 from struct_utils import detect_format, poscar_to_ase, symmetrize, get_formula
 from cif_utils import cif_to_ase, ase_to_eq_cif
 from prediction import ase_to_ml_model, get_legend, load_ml_model
+from common import SERVE_UI, ML_MODELS
 
 
 app_labs = Blueprint('app_labs', __name__)
-ml_model = None
+static_path = os.path.realpath(os.path.join(os.path.dirname(__file__), '../webassets'))
+active_ml_model = None
 
 def fmt_msg(msg, http_code=400):
     return Response('{"error":"%s"}' % msg, content_type='application/json', status=http_code)
@@ -37,20 +38,23 @@ def html_formula(string):
     if sub: html_formula += '</sub>'
     return html_formula
 
-@app_labs.route('/', methods=['GET'])
-def index():
-    return send_from_directory(os.path.dirname(__file__), 'index.html')
+if SERVE_UI:
+    @app_labs.route('/', methods=['GET'])
+    def index():
+        return send_from_directory(static_path, 'index.html')
+    @app_labs.route('/index.css', methods=['GET'])
+    def style():
+        return send_from_directory(static_path, 'index.css')
+    @app_labs.route('/player.html', methods=['GET'])
+    def player():
+        return send_from_directory(static_path, 'player.html')
 
-@app_labs.route('/index.css', methods=['GET'])
-def style():
-    return send_from_directory(os.path.dirname(__file__), 'index.css')
-
-@app_labs.route('/player.html', methods=['GET'])
-def player():
-    return send_from_directory(os.path.dirname(__file__), 'player.html')
+@app_labs.after_request
+def add_cors_header(response):
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
 
 @app_labs.route("/predict", methods=['POST'])
-@crossdomain(origin='*')
 def predict():
     if 'structure' not in request.values:
         return fmt_msg('Invalid request')
@@ -81,7 +85,7 @@ def predict():
     if error:
         return fmt_msg(error)
 
-    prediction, error = ase_to_ml_model(ase_obj, ml_model)
+    prediction, error = ase_to_ml_model(ase_obj, active_ml_model)
     if error:
         return fmt_msg(error)
 
@@ -105,10 +109,15 @@ def predict():
 
 if __name__ == '__main__':
     if sys.argv[1:]:
-        ml_model = load_ml_model(sys.argv[1:])
-        print("Loaded models: " + " ".join(sys.argv[1:]))
+        print("Models to load:\n" + "\n".join(sys.argv[1:]))
+        active_ml_model = load_ml_model(sys.argv[1:])
+
+    elif ML_MODELS:
+        print("Models to load:\n" + "\n".join(ML_MODELS))
+        active_ml_model = load_ml_model(ML_MODELS)
+
     else:
-        print("No model loaded")
+        print("No models to load")
 
     app = Flask(__name__)
     app.debug = False

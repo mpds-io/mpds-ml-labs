@@ -45,6 +45,7 @@ def cif_to_ase(cif_string):
         else:
             return None, 'Absent space group info in CIF'
 
+        disordered = False
         try:
             cellpar = (
                 float( parsed_cif['_cell_length_a'][0].split('(')[0] ),
@@ -61,8 +62,12 @@ def cif_to_ase(cif_string):
                     [ char.split('(')[0] for char in parsed_cif['_atom_site_fract_z'] ]
                 ]).astype(np.float)
             )
+            disordered = any([float(occ) != 1 for occ in parsed_cif.get('_atom_site_occupancy', [])])
         except:
             return None, 'Unexpected non-numerical values occured in CIF'
+
+        if disordered:
+            return None, 'This is disordered structure (not yet supported)'
 
     symbols = parsed_cif.get('_atom_site_type_symbol')
     if not symbols:
