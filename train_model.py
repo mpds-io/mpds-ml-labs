@@ -33,7 +33,7 @@ def get_regr(a=None, b=None):
     )
 
 
-def estimate_quality(algo, args, values, attempts=30, nsamples=0.4):
+def estimate_quality(algo, args, values, attempts=30, nsamples=0.33):
     results = []
     for _ in range(attempts):
         X_train, X_test, y_train, y_test = train_test_split(args, values, test_size=nsamples)
@@ -52,13 +52,12 @@ def estimate_quality(algo, args, values, attempts=30, nsamples=0.4):
     return avg_mae, avg_r2
 
 
-def mpds_get_data(prop_id):
+def mpds_get_data(prop_id, descriptor_kappa):
     """
-    NB
-    currently pressure is not taken into account,
-    however must be
+    Fetch, massage, and save dataframe from the MPDS
+    NB currently pressure is not taken into account!
     """
-    print("Getting %s" % human_names[prop_id]['name'])
+    print("Getting %s with descriptor kappa = %s" % (human_names[prop_id]['name'], descriptor_kappa))
     starttime = time.time()
 
     client = MPDSDataRetrieval()
@@ -84,12 +83,14 @@ def mpds_get_data(prop_id):
     # these should be corrected by LPF editors soon
     if prop_id == 'z':
         props = props[props['Value'] < 2000]
-    elif prop_id == 'w':
-        props = props[(props['Value'] > 0) & (props['Value'] < 20)]
+    #elif prop_id == 'w': # NB this requires additional treatment for zero band gaps
+    #    props = props[(props['Value'] > 0) & (props['Value'] < 20)]
     elif prop_id == 'u':
         props = props[props['Value'] > 0]
 
-    to_drop = props[(props['Cname'] == 'Temperature') & (props['Cunits'] == 'K') & ((props['Cvalue'] < 200) | (props['Cvalue'] > 400))]
+    to_drop = props[
+        (props['Cname'] == 'Temperature') & (props['Cunits'] == 'K') & ((props['Cvalue'] < 200) | (props['Cvalue'] > 400))
+    ]
 
     print("Rows to drop by criteria: %s" % len(to_drop))
     props.drop(to_drop.index, inplace=True)
@@ -100,22 +101,26 @@ def mpds_get_data(prop_id):
 
     print("Got %s distinct crystalline phases" % len(phases))
 
-    min_descriptor_len = 220
+    min_descriptor_len = 200
     max_descriptor_len = min_descriptor_len*10
     data_by_phases = {}
 
+    print("Computing descriptors...")
     pbar = ProgressBar()
     for item in pbar(client.get_data(
-        {"props": "atomic structure"},
+        {
+            "props": "atomic structure",
+            "classes": "non-disordered"
+        },
         fields={'S':['phase_id', 'entry', 'chemical_formula', 'cell_abc', 'sg_n', 'setting', 'basis_noneq', 'els_noneq']},
         phases=phases
     )):
         crystal = MPDSDataRetrieval.compile_crystal(item, 'ase')
         if not crystal: continue
-        descriptor = get_descriptor(crystal)
+        descriptor = get_descriptor(crystal, kappa=descriptor_kappa)
 
         if len(descriptor) < min_descriptor_len:
-            descriptor = get_descriptor(crystal, overreach=True)
+            descriptor = get_descriptor(crystal, kappa=descriptor_kappa, overreach=True)
             if len(descriptor) < min_descriptor_len:
                 continue
 
@@ -147,10 +152,58 @@ def mpds_get_data(prop_id):
 
     print("Done %s rows in %1.2f sc" % (len(struct_props), time.time() - starttime))
 
-    export_file = MPDSExport.save_df(struct_props, prop_id)
-    print("Saving %s" % export_file)
+    struct_props.export_file = MPDSExport.save_df(struct_props, prop_id)
+    print("Saving %s" % struct_props.export_file)
 
     return struct_props
+
+
+def tune_model(data_file):
+    """
+    Load saved data and perform simple regressor parameter tuning
+    """
+    basename = data_file.split(os.sep)[-1]
+    if basename.startswith('df') and basename[3:4] == '_' and basename[2:3] in human_names:
+        tag = basename[2:3]
+        print("Detected property %s" % human_names[tag]['name'])
+    else:
+        tag = None
+        print("No property name detected")
+
+    df = pd.read_pickle(data_file)
+
+    X = np.array(df['Descriptor'].tolist())
+    y = df['Avgvalue'].tolist()
+
+    results = []
+    for parameter_a in range(20, 501, 20):
+        avg_mae, avg_r2 = estimate_quality(get_regr(a=parameter_a), X, y)
+        results.append([parameter_a, avg_mae, avg_r2])
+        print("%s\t\t\t%s\t\t\t%s" % (parameter_a, avg_mae, avg_r2))
+    results.sort(key=lambda x: (-x[1], x[2]))
+
+    print("Best result:", results[-1])
+    parameter_a = results[-1][0]
+
+    results = []
+    for parameter_b in range(1, 13):
+        avg_mae, avg_r2 = estimate_quality(get_regr(a=parameter_a, b=parameter_b), X, y)
+        results.append([parameter_b, avg_mae, avg_r2])
+        print("%s\t\t\t%s\t\t\t%s" % (parameter_b, avg_mae, avg_r2))
+    results.sort(key=lambda x: (-x[1], x[2]))
+
+    print("Best result:", results[-1])
+    parameter_b = results[-1][0]
+
+    print("a = %s b = %s" % (parameter_a, parameter_b))
+
+    regr = get_regr(a=parameter_a, b=parameter_b)
+    regr.fit(X, y)
+    regr.metadata = {'mae': avg_mae, 'r2': round(avg_r2, 2)}
+
+    if tag:
+        export_file = MPDSExport.save_model(regr, tag)
+        print("Saving %s" % export_file)
 
 
 if __name__ == "__main__":
@@ -158,68 +211,30 @@ if __name__ == "__main__":
         arg = sys.argv[1]
     except IndexError:
         sys.exit(
-            "What to do?\n"
-            "Please, provide either a *prop_id* letter (%s) for a property data to be downloaded,\n"
-            "or a data *filename* generated after a property data download." % ", ".join(human_names.keys())
+    "What to do?\n"
+    "Please, provide either a *prop_id* letter (%s) for a property data to be downloaded and fitted,\n"
+    "or a data *filename* for tuning the model." % ", ".join(human_names.keys())
         )
+    try:
+        descriptor_kappa = int(sys.argv[2])
+    except:
+        descriptor_kappa = None
 
     if arg in human_names.keys():
 
-        # getting the data from scratch by prop_id
-        struct_props = mpds_get_data(arg)
+        struct_props = mpds_get_data(arg, descriptor_kappa)
 
         X = np.array(struct_props['Descriptor'].tolist())
         y = struct_props['Avgvalue'].tolist()
 
         avg_mae, avg_r2 = estimate_quality(get_regr(), X, y)
+
         print("Avg. MAE: %.2f" % avg_mae)
         print("Avg. R2 score: %.2f" % avg_r2)
 
+        tune_model(struct_props.export_file)
+
     elif os.path.exists(arg):
-
-        # loading saved data
-        basename = arg.split(os.sep)[-1]
-        if basename.startswith('df') and basename[3:4] == '_' and basename[2:3] in human_names:
-            tag = basename[2:3]
-            print("Detected property %s" % human_names[tag]['name'])
-        else:
-            tag = None
-            print("No property name detected")
-
-        df = pd.read_pickle(arg)
-
-        X = np.array(df['Descriptor'].tolist())
-        y = df['Avgvalue'].tolist()
-
-        # simple regressor parameter tuning
-        results = []
-        for a in range(60, 501, 20):
-            avg_mae, avg_r2 = estimate_quality(get_regr(a=a), X, y)
-            results.append([a, avg_mae, avg_r2])
-            print("%s\t\t\t%s\t\t\t%s" % (a, avg_mae, avg_r2))
-        results.sort(key=lambda x: (-x[1], x[2]))
-
-        print("Best result:", results[-1])
-        a = results[-1][0]
-
-        results = []
-        for b in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]:
-            avg_mae, avg_r2 = estimate_quality(get_regr(a=a, b=b), X, y)
-            results.append([b, avg_mae, avg_r2])
-            print("%s\t\t\t%s\t\t\t%s" % (b, avg_mae, avg_r2))
-        results.sort(key=lambda x: (-x[1], x[2]))
-
-        print("Best result:", results[-1])
-        b = results[-1][0]
-
-        print("a = %s b = %s" % (a, b))
-
-        regr = get_regr(a=a, b=b)
-        regr.fit(X, y)
-        regr.metadata = {'mae': avg_mae, 'r2': round(avg_r2, 2)}
-
-        if tag:
-            export_file = MPDSExport.save_model(regr, tag)
-            print("Saving %s" % export_file)
+        tune_model(arg)
 
     else: raise RuntimeError("Unrecognized argument: %s" % arg)

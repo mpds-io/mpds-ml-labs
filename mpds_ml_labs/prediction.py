@@ -1,10 +1,9 @@
 
 from __future__ import division
 import os
+import cPickle
 
 import numpy as np
-
-from sklearn.externals import joblib
 
 
 human_names = {
@@ -17,7 +16,7 @@ human_names = {
     'y': {
         'name': 'enthalpy of formation',
         'units': 'kJ g-at.-1',
-        'symbol': 'H',
+        'symbol': '&Delta;H',
         'rounding': 0
     },
     'x': {
@@ -26,6 +25,12 @@ human_names = {
         'symbol': 'C<sub>p</sub>',
         'rounding': 0
     },
+    #'w': {
+    #    'name': 'band gap for direct transition',
+    #    'units': 'eV',
+    #    'symbol': 'e<sub>dir.</sub>',
+    #    'rounding': 1
+    #},
     'k': {
         'name': 'Seebeck coefficient',
         'units': 'muV K-1',
@@ -62,13 +67,14 @@ pmin, pmax = 1, max(periodic_numbers)
 periodic_numbers_normed = [(i - pmin)/(pmax - pmin) for i in periodic_numbers]
 
 
-def get_descriptor(ase_obj, kappa=18, overreach=False):
+def get_descriptor(ase_obj, kappa=None, overreach=False):
     """
     From ASE object obtain
     a vectorized atomic structure
     populated to a certain fixed (relatively big) volume
     defined by kappa
     """
+    if not kappa: kappa = 18
     if overreach: kappa *= 2
 
     norms = np.array([ np.linalg.norm(vec) for vec in ase_obj.get_cell() ])
@@ -76,7 +82,9 @@ def get_descriptor(ase_obj, kappa=18, overreach=False):
     ase_obj = ase_obj.repeat(multiple)
     com = ase_obj.get_center_of_mass() # NB use recent ase version here, because of the new element symbols
     ase_obj.translate(-com)
-    del ase_obj[[atom.index for atom in ase_obj if np.sqrt(np.dot(atom.position, atom.position)) > kappa]]
+    del ase_obj[
+        [atom.index for atom in ase_obj if np.sqrt(np.dot(atom.position, atom.position)) > kappa]
+    ]
 
     ase_obj.center()
     ase_obj.set_pbc((False, False, False))
@@ -99,6 +107,10 @@ def get_descriptor(ase_obj, kappa=18, overreach=False):
 def load_ml_model(prop_model_files):
     ml_model = {}
     for n, file_name in enumerate(prop_model_files, start=1):
+        if not os.path.exists(file_name):
+            print("No file %s" % file_name)
+            continue
+
         basename = file_name.split(os.sep)[-1]
         if basename.startswith('ml') and basename[3:4] == '_' and basename[2:3] in human_names:
             prop_id = basename[2:3]
@@ -107,10 +119,11 @@ def load_ml_model(prop_model_files):
             prop_id = str(n)
             print("No property name detected in file %s" % basename)
 
-        model = joblib.load(file_name)
-        if hasattr(model, 'predict') and hasattr(model, 'metadata'):
-            ml_model[prop_id] = model
-            print("Model metadata: %s" % model.metadata)
+        with open(file_name, 'rb') as f:
+            model = cPickle.load(f)
+            if hasattr(model, 'predict') and hasattr(model, 'metadata'):
+                ml_model[prop_id] = model
+                print("Model metadata: %s" % model.metadata)
 
     print("Loaded property models: %s" % len(ml_model))
     return ml_model
@@ -134,9 +147,7 @@ def ase_to_ml_model(ase_obj, ml_model):
     d_dim = len(descriptor)
 
     if not ml_model: # testing
-
-        test_prop = round(np.sum(descriptor))
-        return {prop_id: {'value': test_prop, 'mae': 0, 'r2': 0} for prop_id in human_names.keys()}, None
+        return {prop_id: {'value': 42, 'mae': 0, 'r2': 0} for prop_id in human_names.keys()}, None
 
     for prop_id, regr in ml_model.items(): # production
 
