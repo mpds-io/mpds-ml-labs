@@ -6,42 +6,62 @@ import cPickle
 import numpy as np
 
 
-human_names = {
+prop_semantics = {
+    #'w': {
+    #    'name': 'band gap for direct transition',
+    #    'units': 'eV',
+    #    'symbol': 'e<sub>dir.</sub>',
+    #    'rounding': 1,
+    #    'interval': [0.01, 20]
+    #},
     'z': {
         'name': 'isothermal bulk modulus',
         'units': 'GPa',
         'symbol': 'B',
-        'rounding': 0
+        'rounding': 0,
+        'interval': [0.5, 2000]
     },
     'y': {
         'name': 'enthalpy of formation',
         'units': 'kJ g-at.-1',
         'symbol': '&Delta;H',
-        'rounding': 0
+        'rounding': 0,
+        'interval': [-900, 200]
     },
     'x': {
         'name': 'heat capacity at constant pressure',
         'units': 'J K-1 g-at.-1',
         'symbol': 'C<sub>p</sub>',
-        'rounding': 0
+        'rounding': 0,
+        'interval': [0, 500]
     },
-    #'w': {
-    #    'name': 'band gap for direct transition',
-    #    'units': 'eV',
-    #    'symbol': 'e<sub>dir.</sub>',
-    #    'rounding': 1
-    #},
     'k': {
         'name': 'Seebeck coefficient',
         'units': 'muV K-1',
         'symbol': 'S',
-        'rounding': 1
+        'rounding': 1,
+        'interval': [-1000, 1000]
     },
     'm': {
         'name': 'temperature for congruent melting',
         'units': 'K',
         'symbol': 'T<sub>melt</sub>',
-        'rounding': 0
+        'rounding': 0,
+        'interval': [10, 5000]
+    },
+    'd': {
+        'name': 'Debye temperature',
+        'units': 'K',
+        'symbol': '&Theta;<sub>D</sub>',
+        'rounding': 0,
+        'interval': [10, 2000]
+    },
+    't': {
+        'name': 'linear thermal expansion coefficient',
+        'units': 'K-1',
+        'symbol': '&Theta;<sub>D</sub>',
+        'rounding': 6,
+        'interval': [-0.001, 0.001]
     }
 }
 
@@ -112,9 +132,9 @@ def load_ml_model(prop_model_files):
             continue
 
         basename = file_name.split(os.sep)[-1]
-        if basename.startswith('ml') and basename[3:4] == '_' and basename[2:3] in human_names:
+        if basename.startswith('ml') and basename[3:4] == '_' and basename[2:3] in prop_semantics:
             prop_id = basename[2:3]
-            print("Detected property %s in file %s" % (human_names[prop_id]['name'], basename))
+            print("Detected property %s in file %s" % (prop_semantics[prop_id]['name'], basename))
         else:
             prop_id = str(n)
             print("No property name detected in file %s" % basename)
@@ -132,7 +152,7 @@ def load_ml_model(prop_model_files):
 def get_legend(pred_dict):
     legend = {}
     for key in pred_dict.keys():
-        legend[key] = human_names.get(key, {
+        legend[key] = prop_semantics.get(key, {
             'name': 'Unspecified property ' + str(key),
             'units': 'arb.u.',
             'symbol': 'P' + str(key),
@@ -147,7 +167,7 @@ def ase_to_ml_model(ase_obj, ml_model):
     d_dim = len(descriptor)
 
     if not ml_model: # testing
-        return {prop_id: {'value': 42, 'mae': 0, 'r2': 0} for prop_id in human_names.keys()}, None
+        return {prop_id: {'value': 42, 'mae': 0, 'r2': 0} for prop_id in prop_semantics.keys()}, None
 
     for prop_id, regr in ml_model.items(): # production
 
@@ -164,8 +184,8 @@ def ase_to_ml_model(ase_obj, ml_model):
             return None, str(e)
 
         result[prop_id] = {
-            'value': round(prediction, human_names[prop_id]['rounding']),
-            'mae': round(regr.metadata['mae'], human_names[prop_id]['rounding']),
+            'value': round(prediction, prop_semantics[prop_id]['rounding']),
+            'mae': round(regr.metadata['mae'], prop_semantics[prop_id]['rounding']),
             'r2': regr.metadata['r2']
         }
 

@@ -8,29 +8,13 @@ import numpy as np
 
 from mpds_client import MPDSDataRetrieval, APIError
 
-from prediction import human_names
-from struct_utils import detect_format, poscar_to_ase, symmetrize, get_formula
+from prediction import prop_semantics
+from struct_utils import detect_format, poscar_to_ase, symmetrize, get_formula, sgn_to_crsystem
 from cif_utils import cif_to_ase
 
 
 req = httplib2.Http()
 client = MPDSDataRetrieval()
-
-def sgn_to_crsystem(number):
-    if   195 <= number <= 230:
-        return 'cubic'
-    elif 168 <= number <= 194:
-        return 'hexagonal'
-    elif 143 <= number <= 167:
-        return 'trigonal'
-    elif 75  <= number <= 142:
-        return 'tetragonal'
-    elif 16  <= number <= 74:
-        return 'orthorhombic'
-    elif 3   <= number <= 15:
-        return 'monoclinic'
-    else:
-        return 'triclinic'
 
 def make_request(address, data={}, httpverb='POST', headers={}):
 
@@ -46,6 +30,9 @@ def make_request(address, data={}, httpverb='POST', headers={}):
     return json.loads(content)
 
 if __name__ == '__main__':
+
+    try: sys.argv[1]
+    except IndexError: sys.exit("Structure file must be given!")
 
     structure = open(sys.argv[1]).read()
     fmt = detect_format(structure)
@@ -72,7 +59,7 @@ if __name__ == '__main__':
         raise RuntimeError(answer['error'])
 
     formulae_categ, lattices_categ = get_formula(ase_obj), sgn_to_crsystem(ase_obj.info['spacegroup'].no)
-    for prop_id, pdata in human_names.items():
+    for prop_id, pdata in prop_semantics.items():
         try:
             resp = client.get_dataframe({
                 'formulae': formulae_categ,
@@ -80,7 +67,7 @@ if __name__ == '__main__':
                 'props': pdata['name']
             })
         except APIError as e:
-            human_names[prop_id]['factual'] = None
+            prop_semantics[prop_id]['factual'] = None
             if e.code == 1:
                 continue
             else:
@@ -88,13 +75,13 @@ if __name__ == '__main__':
 
         resp['Value'] = resp['Value'].astype('float64') # to treat values out of bounds given as str
         resp = resp[resp['Units'] == pdata['units']]
-        human_names[prop_id]['factual'] = np.median(resp['Value'])
+        prop_semantics[prop_id]['factual'] = np.median(resp['Value'])
 
     for prop_id, pdata in answer['prediction'].items():
-        print("{0:40} = {1:6}, factual {2:6} (MAE = {3:4}), {4}".format(
-            human_names[prop_id]['name'],
+        print("{0:40} = {1:6}, factual {2:8} (MAE = {3:4}), {4}".format(
+            prop_semantics[prop_id]['name'],
             pdata['value'],
-            human_names[prop_id]['factual'] or 'absent',
-            abs(pdata['value'] - human_names[prop_id]['factual']) if human_names[prop_id]['factual'] else 'unknown',
-            human_names[prop_id]['units']
+            prop_semantics[prop_id]['factual'] or 'absent',
+            pdata['mae'],
+            prop_semantics[prop_id]['units']
         ))

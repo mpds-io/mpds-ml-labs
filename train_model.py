@@ -14,7 +14,7 @@ from sklearn.metrics import mean_absolute_error, r2_score
 
 from mpds_client import MPDSDataRetrieval, MPDSExport
 
-from prediction import get_descriptor, human_names
+from mpds_ml_labs.prediction import get_descriptor, prop_semantics
 
 
 def get_regr(a=None, b=None):
@@ -57,13 +57,13 @@ def mpds_get_data(prop_id, descriptor_kappa):
     Fetch, massage, and save dataframe from the MPDS
     NB currently pressure is not taken into account!
     """
-    print("Getting %s with descriptor kappa = %s" % (human_names[prop_id]['name'], descriptor_kappa))
+    print("Getting %s with descriptor kappa = %s" % (prop_semantics[prop_id]['name'], descriptor_kappa))
     starttime = time.time()
 
     client = MPDSDataRetrieval()
 
     props = client.get_dataframe(
-        {"props": human_names[prop_id]['name']},
+        {"props": prop_semantics[prop_id]['name']},
         fields={'P': [
             'sample.material.chemical_formula',
             'sample.material.phase_id',
@@ -77,23 +77,17 @@ def mpds_get_data(prop_id, descriptor_kappa):
     )
     props['Value'] = props['Value'].astype('float64') # to treat values out of bounds given as str
     props = props[np.isfinite(props['Phase'])]
-    props = props[props['Units'] == human_names[prop_id]['units']]
-
-    # filtering some abnormal values
-    # these should be corrected by LPF editors soon
-    if prop_id == 'z':
-        props = props[props['Value'] < 2000]
-    #elif prop_id == 'w': # NB this requires additional treatment for zero band gaps
-    #    props = props[(props['Value'] > 0) & (props['Value'] < 20)]
-    elif prop_id == 'u':
-        props = props[props['Value'] > 0]
-
-    to_drop = props[
-        (props['Cname'] == 'Temperature') & (props['Cunits'] == 'K') & ((props['Cvalue'] < 200) | (props['Cvalue'] > 400))
+    props = props[props['Units'] == prop_semantics[prop_id]['units']]
+    props = props[
+        (props['Value'] > prop_semantics[prop_id]['interval'][0]) & \
+        (props['Value'] < prop_semantics[prop_id]['interval'][1])
     ]
-
-    print("Rows to drop by criteria: %s" % len(to_drop))
-    props.drop(to_drop.index, inplace=True)
+    if prop_id not in ['m', 'd']:
+        to_drop = props[
+            (props['Cname'] == 'Temperature') & (props['Cunits'] == 'K') & ((props['Cvalue'] < 200) | (props['Cvalue'] > 400))
+        ]
+        print("Rows to neglect by temperature: %s" % len(to_drop))
+        props.drop(to_drop.index, inplace=True)
 
     phases_compounds = dict(zip(props['Phase'], props['Compound'])) # keep the mapping for future
     avgprops = props.groupby('Phase')['Value'].mean().to_frame().reset_index().rename(columns={'Value': 'Avgvalue'})
@@ -163,9 +157,9 @@ def tune_model(data_file):
     Load saved data and perform simple regressor parameter tuning
     """
     basename = data_file.split(os.sep)[-1]
-    if basename.startswith('df') and basename[3:4] == '_' and basename[2:3] in human_names:
+    if basename.startswith('df') and basename[3:4] == '_' and basename[2:3] in prop_semantics:
         tag = basename[2:3]
-        print("Detected property %s" % human_names[tag]['name'])
+        print("Detected property %s" % prop_semantics[tag]['name'])
     else:
         tag = None
         print("No property name detected")
@@ -213,14 +207,14 @@ if __name__ == "__main__":
         sys.exit(
     "What to do?\n"
     "Please, provide either a *prop_id* letter (%s) for a property data to be downloaded and fitted,\n"
-    "or a data *filename* for tuning the model." % ", ".join(human_names.keys())
+    "or a data *filename* for tuning the model." % ", ".join(prop_semantics.keys())
         )
     try:
         descriptor_kappa = int(sys.argv[2])
     except:
         descriptor_kappa = None
 
-    if arg in human_names.keys():
+    if arg in prop_semantics.keys():
 
         struct_props = mpds_get_data(arg, descriptor_kappa)
 

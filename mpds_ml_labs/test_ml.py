@@ -3,7 +3,7 @@ import os, sys
 
 from struct_utils import detect_format, poscar_to_ase, symmetrize
 from cif_utils import cif_to_ase
-from prediction import ase_to_ml_model, load_ml_model, human_names
+from prediction import ase_to_ml_model, load_ml_model, prop_semantics
 from common import ML_MODELS, DATA_PATH
 
 
@@ -57,8 +57,8 @@ for fname in structures:
 
     for prop_id, pdata in prediction.items():
         print("{0:40} = {1:6} (MAE = {2:4}), {3}".format(
-            human_names[prop_id]['name'],
+            prop_semantics[prop_id]['name'],
             pdata['value'],
             pdata['mae'],
-            human_names[prop_id]['units']
+            prop_semantics[prop_id]['units']
         ))
