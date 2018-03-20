@@ -7,13 +7,13 @@ import numpy as np
 
 
 prop_semantics = {
-    #'w': {
-    #    'name': 'band gap for direct transition',
-    #    'units': 'eV',
-    #    'symbol': 'e<sub>dir.</sub>',
-    #    'rounding': 1,
-    #    'interval': [0.01, 20]
-    #},
+    'w': {
+        'name': 'band gap for direct transition',
+        'units': 'eV',
+        'symbol': 'e<sub>dir.</sub>',
+        'rounding': 1,
+        'interval': [0.01, 20]
+    },
     'z': {
         'name': 'isothermal bulk modulus',
         'units': 'GPa',
@@ -59,8 +59,8 @@ prop_semantics = {
     't': {
         'name': 'linear thermal expansion coefficient',
         'units': 'K-1',
-        'symbol': '&Theta;<sub>D</sub>',
-        'rounding': 6,
+        'symbol': '&Theta;<sub>D</sub>(10<sup>5</sup>)',
+        'rounding': 2,
         'interval': [-0.001, 0.001]
     }
 }

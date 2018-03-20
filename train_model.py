@@ -2,13 +2,12 @@
 from __future__ import division
 import os, sys
 import time
-import random
 from progressbar import ProgressBar
 
 import numpy as np
 import pandas as pd
 
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error, r2_score
 
@@ -82,12 +81,16 @@ def mpds_get_data(prop_id, descriptor_kappa):
         (props['Value'] > prop_semantics[prop_id]['interval'][0]) & \
         (props['Value'] < prop_semantics[prop_id]['interval'][1])
     ]
+
     if prop_id not in ['m', 'd']:
         to_drop = props[
             (props['Cname'] == 'Temperature') & (props['Cunits'] == 'K') & ((props['Cvalue'] < 200) | (props['Cvalue'] > 400))
         ]
         print("Rows to neglect by temperature: %s" % len(to_drop))
         props.drop(to_drop.index, inplace=True)
+
+    if prop_id == 't':
+        props['Value'] *= 100000 # normalization 10**5
 
     phases_compounds = dict(zip(props['Phase'], props['Compound'])) # keep the mapping for future
     avgprops = props.groupby('Phase')['Value'].mean().to_frame().reset_index().rename(columns={'Value': 'Avgvalue'})
@@ -110,7 +113,8 @@ def mpds_get_data(prop_id, descriptor_kappa):
         phases=phases
     )):
         crystal = MPDSDataRetrieval.compile_crystal(item, 'ase')
-        if not crystal: continue
+        if not crystal:
+            continue
         descriptor = get_descriptor(crystal, kappa=descriptor_kappa)
 
         if len(descriptor) < min_descriptor_len:
@@ -187,7 +191,7 @@ def tune_model(data_file):
     results.sort(key=lambda x: (-x[1], x[2]))
 
     print("Best result:", results[-1])
-    parameter_b = results[-1][0]
+    parameter_b, avg_mae, avg_r2 = results[-1]
 
     print("a = %s b = %s" % (parameter_a, parameter_b))
 
