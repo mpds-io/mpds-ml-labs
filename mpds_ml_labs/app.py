@@ -13,7 +13,7 @@ from common import SERVE_UI, ML_MODELS
 
 app_labs = Blueprint('app_labs', __name__)
 static_path = os.path.realpath(os.path.join(os.path.dirname(__file__), '../webassets'))
-active_ml_models = None
+active_ml_models = {}
 
 def fmt_msg(msg, http_code=400):
     return Response('{"error":"%s"}' % msg, content_type='application/json', status=http_code)

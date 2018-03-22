@@ -22,14 +22,14 @@ h1{font-size:4vmin;line-height:4vmin;text-align:center;font-weight:bold;}
 #results{display:none;}
 
 #resultbox{float:left;width:70%;}
-#resultbox ul li{font-size:2vmin;line-height:2.5vmin;margin-bottom:1.5vmin;}
+#resultbox ul li{font-size:1.75vmin;line-height:3vmin;}
 #resultbox i{font-family:"Courier New",Courier;font-weight:bold;}
 #resultbox a{text-decoration:none;color:#900;border-bottom:1px solid #900;}
 
 #ctrlbox{float:right;width:160px;}
 #ctrlbox > div.button{width:100%;margin:3vmin auto;}
 
-#playerbox{display:none;margin:2vmin auto 4vmin;}
+#playerbox{display:none;margin:0 auto 4vmin;}
 
 #inputbox{padding-bottom:45px;}
 #inputbox textarea{width:100%;height:45vmin;padding:0.5vmin;font-size:1.5vmin;font-family:"Courier New",Courier;}

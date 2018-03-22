@@ -63,7 +63,7 @@ prop_models = {
     't': {
         'name': 'linear thermal expansion coefficient',
         'units': 'K-1',
-        'symbol': '&Theta;<sub>D</sub>(10<sup>5</sup>)',
+        'symbol': '&alpha;(10<sup>5</sup>)',
         'rounding': 2,
         'interval': [-0.001, 0.001]
     }
