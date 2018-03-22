@@ -8,13 +8,14 @@ import numpy as np
 
 from mpds_client import MPDSDataRetrieval, APIError
 
-from prediction import prop_semantics
+from prediction import prop_models
 from struct_utils import detect_format, poscar_to_ase, symmetrize, get_formula, sgn_to_crsystem
 from cif_utils import cif_to_ase
+from common import API_KEY, API_ENDPOINT
 
 
 req = httplib2.Http()
-client = MPDSDataRetrieval()
+client = MPDSDataRetrieval(api_key=API_KEY, endpoint=API_ENDPOINT)
 
 def make_request(address, data={}, httpverb='POST', headers={}):
 
@@ -59,7 +60,7 @@ if __name__ == '__main__':
         raise RuntimeError(answer['error'])
 
     formulae_categ, lattices_categ = get_formula(ase_obj), sgn_to_crsystem(ase_obj.info['spacegroup'].no)
-    for prop_id, pdata in prop_semantics.items():
+    for prop_id, pdata in prop_models.items():
         try:
             resp = client.get_dataframe({
                 'formulae': formulae_categ,
@@ -67,7 +68,7 @@ if __name__ == '__main__':
                 'props': pdata['name']
             })
         except APIError as e:
-            prop_semantics[prop_id]['factual'] = None
+            prop_models[prop_id]['factual'] = None
             if e.code == 1:
                 continue
             else:
@@ -75,13 +76,13 @@ if __name__ == '__main__':
 
         resp['Value'] = resp['Value'].astype('float64') # to treat values out of bounds given as str
         resp = resp[resp['Units'] == pdata['units']]
-        prop_semantics[prop_id]['factual'] = np.median(resp['Value'])
+        prop_models[prop_id]['factual'] = np.median(resp['Value'])
 
     for prop_id, pdata in answer['prediction'].items():
         print("{0:40} = {1:6}, factual {2:8} (MAE = {3:4}), {4}".format(
-            prop_semantics[prop_id]['name'],
-            pdata['value'],
-            prop_semantics[prop_id]['factual'] or 'absent',
+            prop_models[prop_id]['name'],
+            'conductor' if pdata['value'] == 0 and prop_id == 'w' else pdata['value'],
+            prop_models[prop_id]['factual'] or 'absent',
             pdata['mae'],
-            prop_semantics[prop_id]['units']
+            prop_models[prop_id]['units']
         ))

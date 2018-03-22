@@ -3,7 +3,7 @@ import os, sys
 
 from struct_utils import detect_format, poscar_to_ase, symmetrize
 from cif_utils import cif_to_ase
-from prediction import ase_to_ml_model, load_ml_model, prop_semantics
+from prediction import ase_to_prediction, load_ml_models, prop_models
 from common import ML_MODELS, DATA_PATH
 
 
@@ -11,16 +11,19 @@ models, structures = [], []
 
 if sys.argv[1:]:
     inputs = [f for f in sys.argv[1:] if os.path.isfile(f)]
-    models, structures = \
-        [f for f in inputs if f.endswith('.pkl')], [f for f in inputs if not f.endswith('.pkl')]
+    models, structures = [
+        f for f in inputs if f.endswith('.pkl')
+    ], [
+        f for f in inputs if not f.endswith('.pkl')
+    ]
 
 if not models:
     models = ML_MODELS
 
 if not structures:
-    structures = [os.path.join(DATA_PATH, f) for f in os.listdir(DATA_PATH) if os.path.isfile(os.path.join(DATA_PATH, f))]
+    structures = [os.path.join(DATA_PATH, f) for f in os.listdir(DATA_PATH) if os.path.isfile(os.path.join(DATA_PATH, f)) and 'settings.ini' not in f]
 
-active_ml_model = load_ml_model(models)
+active_ml_models = load_ml_models(models)
 
 for fname in structures:
     print
@@ -50,15 +53,15 @@ for fname in structures:
         print(error)
         continue
 
-    prediction, error = ase_to_ml_model(ase_obj, active_ml_model)
+    prediction, error = ase_to_prediction(ase_obj, active_ml_models)
     if error:
         print(error)
         continue
 
     for prop_id, pdata in prediction.items():
         print("{0:40} = {1:6} (MAE = {2:4}), {3}".format(
-            prop_semantics[prop_id]['name'],
-            pdata['value'],
+            prop_models[prop_id]['name'],
+            'conductor' if pdata['value'] == 0 and prop_id == 'w' else pdata['value'],
             pdata['mae'],
-            prop_semantics[prop_id]['units']
+            prop_models[prop_id]['units']
         ))
