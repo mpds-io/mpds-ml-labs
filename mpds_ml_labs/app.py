@@ -7,13 +7,13 @@ from flask import Flask, Blueprint, Response, request, send_from_directory
 
 from struct_utils import detect_format, poscar_to_ase, symmetrize, get_formula
 from cif_utils import cif_to_ase, ase_to_eq_cif
-from prediction import ase_to_ml_model, get_legend, load_ml_model
+from prediction import ase_to_prediction, get_legend, load_ml_models
 from common import SERVE_UI, ML_MODELS
 
 
 app_labs = Blueprint('app_labs', __name__)
 static_path = os.path.realpath(os.path.join(os.path.dirname(__file__), '../webassets'))
-active_ml_model = None
+active_ml_models = None
 
 def fmt_msg(msg, http_code=400):
     return Response('{"error":"%s"}' % msg, content_type='application/json', status=http_code)
@@ -85,7 +85,7 @@ def predict():
     if error:
         return fmt_msg(error)
 
-    prediction, error = ase_to_ml_model(ase_obj, active_ml_model)
+    prediction, error = ase_to_prediction(ase_obj, active_ml_models)
     if error:
         return fmt_msg(error)
 
@@ -110,11 +110,11 @@ def predict():
 if __name__ == '__main__':
     if sys.argv[1:]:
         print("Models to load:\n" + "\n".join(sys.argv[1:]))
-        active_ml_model = load_ml_model(sys.argv[1:])
+        active_ml_models = load_ml_models(sys.argv[1:])
 
     elif ML_MODELS:
         print("Models to load:\n" + "\n".join(ML_MODELS))
-        active_ml_model = load_ml_model(ML_MODELS)
+        active_ml_models = load_ml_models(ML_MODELS)
 
     else:
         print("No models to load")

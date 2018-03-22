@@ -3,3 +3,5 @@ serve_ui = true
 ml_models =
     /path_to_models/model_one.pkl
     /path_to_models/model_two.pkl
+api_key =
+api_endpoint =

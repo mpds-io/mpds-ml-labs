@@ -5,12 +5,16 @@ import cPickle
 
 import numpy as np
 
+from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_absolute_error, r2_score, confusion_matrix
 
-prop_semantics = {
+
+prop_models = {
     'w': {
-        'name': 'band gap for direct transition',
+        'name': 'band gap',
         'units': 'eV',
-        'symbol': 'e<sub>dir.</sub>',
+        'symbol': 'e<sub>dir. or indir.</sub>',
         'rounding': 1,
         'interval': [0.01, 20]
     },
@@ -124,17 +128,17 @@ def get_descriptor(ase_obj, kappa=None, overreach=False):
     return np.array(DV).flatten()
 
 
-def load_ml_model(prop_model_files):
-    ml_model = {}
+def load_ml_models(prop_model_files):
+    ml_models = {}
     for n, file_name in enumerate(prop_model_files, start=1):
         if not os.path.exists(file_name):
             print("No file %s" % file_name)
             continue
 
         basename = file_name.split(os.sep)[-1]
-        if basename.startswith('ml') and basename[3:4] == '_' and basename[2:3] in prop_semantics:
+        if basename.startswith('ml') and basename[3:4] == '_' and basename[2:3] in prop_models:
             prop_id = basename[2:3]
-            print("Detected property %s in file %s" % (prop_semantics[prop_id]['name'], basename))
+            print("Detected property %s in file %s" % (prop_models[prop_id]['name'], basename))
         else:
             prop_id = str(n)
             print("No property name detected in file %s" % basename)
@@ -142,17 +146,17 @@ def load_ml_model(prop_model_files):
         with open(file_name, 'rb') as f:
             model = cPickle.load(f)
             if hasattr(model, 'predict') and hasattr(model, 'metadata'):
-                ml_model[prop_id] = model
+                ml_models[prop_id] = model
                 print("Model metadata: %s" % model.metadata)
 
-    print("Loaded property models: %s" % len(ml_model))
-    return ml_model
+    print("Loaded property models: %s" % len(ml_models))
+    return ml_models
 
 
 def get_legend(pred_dict):
     legend = {}
     for key in pred_dict.keys():
-        legend[key] = prop_semantics.get(key, {
+        legend[key] = prop_models.get(key, {
             'name': 'Unspecified property ' + str(key),
             'units': 'arb.u.',
             'symbol': 'P' + str(key),
@@ -161,32 +165,127 @@ def get_legend(pred_dict):
     return legend
 
 
-def ase_to_ml_model(ase_obj, ml_model):
+def ase_to_prediction(ase_obj, ml_models):
+    """
+    Execute all the regressor models againts a given structure desriptor;
+    the results of the "w" regressor model will depend on the
+    output of the binary classifier model
+    """
     result = {}
     descriptor = get_descriptor(ase_obj, overreach=True)
     d_dim = len(descriptor)
+    should_invoke_clfr = 'w' in prop_models.keys()
 
-    if not ml_model: # testing
-        return {prop_id: {'value': 42, 'mae': 0, 'r2': 0} for prop_id in prop_semantics.keys()}, None
+    # testing
+    if not ml_models:
+        result = {prop_id: {'value': 42, 'mae': 0, 'r2': 0} for prop_id in prop_models.keys()}
 
-    for prop_id, regr in ml_model.items(): # production
+        if should_invoke_clfr:
+            result['w'] = {'value': 0, 'mae': 0, 'r2': 0}
 
-        if d_dim < regr.n_features_:
+    # production
+    for prop_id, model in ml_models.items():
+
+        if d_dim < model.n_features_:
             continue
-        elif d_dim > regr.n_features_:
-            d_input = descriptor[:regr.n_features_]
+        elif d_dim > model.n_features_:
+            d_input = descriptor[:model.n_features_]
         else:
             d_input = descriptor[:]
 
         try:
-            prediction = regr.predict([d_input])[0]
+            prediction = model.predict([d_input])[0]
         except Exception as e:
             return None, str(e)
 
-        result[prop_id] = {
-            'value': round(prediction, prop_semantics[prop_id]['rounding']),
-            'mae': round(regr.metadata['mae'], prop_semantics[prop_id]['rounding']),
-            'r2': regr.metadata['r2']
-        }
+        # classifier
+        if model.metadata.get('error_percentage'):
+
+            if should_invoke_clfr:
+
+                if prediction == 0:
+                    result['w'] = {'value': 0, 'mae': 0, 'r2': 0}
+
+        # regressor
+        else:
+            if prop_id not in prop_models or \
+            (prop_id == 'w' and prop_id in result):
+                continue
+
+            result[prop_id] = {
+                'value': round(prediction, prop_models[prop_id]['rounding']),
+                'mae': round(model.metadata['mae'], prop_models[prop_id]['rounding']),
+                'r2': model.metadata['r2']
+            }
 
     return result, None
+
+
+def get_regr(a=None, b=None):
+
+    if not a: a = 100
+    if not b: b = 2
+
+    return RandomForestRegressor(
+        n_estimators=a,
+        max_features=b,
+        max_depth=None,
+        min_samples_split=2, # recommended value
+        min_samples_leaf=5, # recommended value
+        bootstrap=True, # recommended value
+        n_jobs=-1
+    )
+
+
+def get_clfr(a=None, b=None):
+
+    if not a: a = 100
+    if not b: b = 2
+
+    return RandomForestClassifier(
+        n_estimators=a,
+        max_features=b,
+        max_depth=None,
+        min_samples_split=2, # recommended value
+        min_samples_leaf=5, # recommended value
+        bootstrap=True, # recommended value
+        n_jobs=-1
+    )
+
+
+def estimate_regr_quality(algo, args, values, attempts=30, nsamples=0.33):
+
+    results = []
+
+    for _ in range(attempts):
+        X_train, X_test, y_train, y_test = train_test_split(args, values, test_size=nsamples)
+        algo.fit(X_train, y_train)
+
+        prediction = algo.predict(X_test)
+
+        mae = mean_absolute_error(y_test, prediction)
+        r2 = r2_score(y_test, prediction)
+        results.append([mae, r2])
+
+    results = list(map(list, zip(*results))) # transpose
+
+    avg_mae = np.median(results[0])
+    avg_r2 = np.median(results[1])
+    return avg_mae, avg_r2
+
+
+def estimate_clfr_quality(algo, args, values, attempts=30, nsamples=0.33):
+
+    results = []
+
+    for _ in range(attempts):
+        X_train, X_test, y_train, y_test = train_test_split(args, values, test_size=nsamples)
+        algo.fit(X_train, y_train)
+
+        prediction = algo.predict(X_test)
+
+        tn, fp, fn, tp = confusion_matrix(y_test, prediction).ravel()
+        error_percentage = (fp + fn)/(tn + fp + fn + tp)
+        results.append(error_percentage)
+
+    return np.median(results)
