@@ -1,4 +1,5 @@
 *.py[co]
+data/settings.ini
 *DS_Store*
 pip-selfcheck.json
 pip-log.txt

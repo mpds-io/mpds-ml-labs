@@ -10,7 +10,7 @@ config_path = os.path.join(DATA_PATH, 'settings.ini')
 if os.path.exists(config_path):
     config.read(config_path)
 
-    SERVE_UI = config.get('mpds_ml_labs', 'serve_ui')
+    SERVE_UI = config.getboolean('mpds_ml_labs', 'serve_ui')
     ML_MODELS = config.get('mpds_ml_labs', 'ml_models') or ''
     API_KEY = config.get('mpds_ml_labs', 'api_key')
     API_ENDPOINT = config.get('mpds_ml_labs', 'api_endpoint')
