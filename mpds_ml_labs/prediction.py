@@ -165,41 +165,57 @@ def get_legend(pred_dict):
     return legend
 
 
-def ase_to_prediction(ase_obj, ml_models):
+def ase_to_prediction(ase_obj, ml_models, prop_ids=False):
+    return get_prediction(
+        get_descriptor(ase_obj, overreach=True),
+        ml_models,
+        prop_ids
+    )
+
+
+def get_prediction(descriptor, ml_models, prop_ids=False):
     """
     Execute all the regressor models againts a given structure desriptor;
     the results of the "w" regressor model will depend on the
     output of the binary classifier model
     """
+    if not prop_ids:
+        prop_ids = ml_models.keys()
+
+    if type(prop_ids) != list:
+        prop_ids = prop_ids.split()
+
+    if not set(prop_ids).issubset(ml_models.keys()):
+        return None, 'Unrecognized model: ' + ', '.join(prop_ids)
+
     result = {}
-    descriptor = get_descriptor(ase_obj, overreach=True)
     d_dim = len(descriptor)
-    should_invoke_clfr = 'w' in prop_models.keys()
+    should_invoke_clfr = 'w' in prop_ids
 
     # testing
     if not ml_models:
-        result = {prop_id: {'value': 42, 'mae': 0, 'r2': 0} for prop_id in prop_models.keys()}
+        result = {prop_id: {'value': 42, 'mae': 0, 'r2': 0} for prop_id in prop_ids}
 
         if should_invoke_clfr:
             result['w'] = {'value': 0, 'mae': 0, 'r2': 0}
 
     # production
-    for prop_id, model in ml_models.items():
+    for prop_id in prop_ids:
 
-        if d_dim < model.n_features_:
+        if d_dim < ml_models[prop_id].n_features_:
             continue
-        elif d_dim > model.n_features_:
-            d_input = descriptor[:model.n_features_]
+        elif d_dim > ml_models[prop_id].n_features_:
+            d_input = descriptor[:ml_models[prop_id].n_features_]
         else:
             d_input = descriptor[:]
 
         try:
-            prediction = model.predict([d_input])[0]
+            prediction = ml_models[prop_id].predict([d_input])[0]
         except Exception as e:
             return None, str(e)
 
         # classifier
-        if model.metadata.get('error_percentage'):
+        if ml_models[prop_id].metadata.get('error_percentage'):
 
             if should_invoke_clfr:
 
@@ -214,8 +230,8 @@ def ase_to_prediction(ase_obj, ml_models):
 
             result[prop_id] = {
                 'value': round(prediction, prop_models[prop_id]['rounding']),
-                'mae': round(model.metadata['mae'], prop_models[prop_id]['rounding']),
-                'r2': model.metadata['r2']
+                'mae': round(ml_models[prop_id].metadata['mae'], prop_models[prop_id]['rounding']),
+                'r2': ml_models[prop_id].metadata['r2']
             }
 
     return result, None
