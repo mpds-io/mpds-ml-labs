@@ -12,23 +12,23 @@ from sklearn.metrics import mean_absolute_error, r2_score, confusion_matrix
 
 prop_models = {
     'w': {
-        'name': 'band gap',
+        'name': 'energy gap',
         'units': 'eV',
-        'symbol': 'e<sub>dir. or indir.</sub>',
+        'symbol': 'E<sub>g</sub>',
         'rounding': 1,
         'interval': [0.01, 20]
     },
     'z': {
         'name': 'isothermal bulk modulus',
         'units': 'GPa',
-        'symbol': 'B',
+        'symbol': 'B<sub>T</sub>',
         'rounding': 0,
         'interval': [0.5, 2000]
     },
     'y': {
         'name': 'enthalpy of formation',
         'units': 'kJ g-at.-1',
-        'symbol': '&Delta;H',
+        'symbol': '&Delta;<sub>f</sub>H',
         'rounding': 0,
         'interval': [-900, 200]
     },
@@ -49,7 +49,7 @@ prop_models = {
     'm': {
         'name': 'temperature for congruent melting',
         'units': 'K',
-        'symbol': 'T<sub>melt</sub>',
+        'symbol': 'T<sub>fus</sub>',
         'rounding': 0,
         'interval': [10, 5000]
     },
@@ -63,7 +63,7 @@ prop_models = {
     't': {
         'name': 'linear thermal expansion coefficient',
         'units': 'K-1',
-        'symbol': '&alpha;(10<sup>5</sup>)',
+        'symbol': '&alpha;(10<sup>-5</sup>)',
         'rounding': 2,
         'interval': [-0.001, 0.001]
     }
@@ -147,7 +147,7 @@ def load_ml_models(prop_model_files):
             model = cPickle.load(f)
             if hasattr(model, 'predict') and hasattr(model, 'metadata'):
                 ml_models[prop_id] = model
-                print("Model metadata: %s" % model.metadata)
+                print("Model %s metadata: %s" % (basename, model.metadata))
 
     print("Loaded property models: %s" % len(ml_models))
     return ml_models
@@ -201,7 +201,6 @@ def get_prediction(descriptor, ml_models, prop_ids=False):
 
     # production
     for prop_id in prop_ids:
-
         if d_dim < ml_models[prop_id].n_features_:
             continue
         elif d_dim > ml_models[prop_id].n_features_:
@@ -224,8 +223,7 @@ def get_prediction(descriptor, ml_models, prop_ids=False):
 
         # regressor
         else:
-            if prop_id not in prop_models or \
-            (prop_id == 'w' and prop_id in result):
+            if prop_id == 'w' and prop_id in result:
                 continue
 
             result[prop_id] = {
