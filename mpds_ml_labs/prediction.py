@@ -130,24 +130,26 @@ def get_descriptor(ase_obj, kappa=None, overreach=False):
 
 def load_ml_models(prop_model_files):
     ml_models = {}
-    for n, file_name in enumerate(prop_model_files, start=1):
+    for file_name in prop_model_files:
         if not os.path.exists(file_name):
             print("No file %s" % file_name)
             continue
 
         basename = file_name.split(os.sep)[-1]
-        if basename.startswith('ml') and basename[3:4] == '_' and basename[2:3] in prop_models:
+        if basename.startswith('ml') and basename[3:4] == '_':
             prop_id = basename[2:3]
-            print("Detected property %s in file %s" % (prop_models[prop_id]['name'], basename))
-        else:
-            prop_id = str(n)
-            print("No property name detected in file %s" % basename)
+            if prop_id in prop_models:
+                print("Detected regressor model-%s <%s> in file %s" % (prop_id, prop_models[prop_id]['name'], basename))
+            else:
+                print("Detected model-%s in file %s" % (prop_id, basename))
+
+        else: raise RuntimeError("Unknown model file: %s" % basename)
 
         with open(file_name, 'rb') as f:
             model = cPickle.load(f)
             if hasattr(model, 'predict') and hasattr(model, 'metadata'):
                 ml_models[prop_id] = model
-                print("Model %s metadata: %s" % (basename, model.metadata))
+                print("Model-%s %s metadata: %s" % (prop_id, basename, model.metadata))
 
     print("Loaded property models: %s" % len(ml_models))
     return ml_models
@@ -176,8 +178,8 @@ def ase_to_prediction(ase_obj, ml_models, prop_ids=False):
 def get_prediction(descriptor, ml_models, prop_ids=False):
     """
     Execute all the regressor models againts a given structure desriptor;
-    the results of the "w" regressor model will depend on the
-    output of the binary classifier model
+    the results of the "w" regressor model will depend on
+    the output of the "0" binary classifier model
     """
     if not prop_ids:
         prop_ids = ml_models.keys()
@@ -190,17 +192,23 @@ def get_prediction(descriptor, ml_models, prop_ids=False):
 
     result = {}
     d_dim = len(descriptor)
-    should_invoke_clfr = 'w' in prop_ids
+
+    if 'w' in prop_ids: # classifier invocation
+        if '0' not in ml_models:
+            return None, 'Classifier model is required but not available'
+        if '0' not in prop_ids:
+            prop_ids.append('0')
 
     # testing
     if not ml_models:
-        result = {prop_id: {'value': 42, 'mae': 0, 'r2': 0} for prop_id in prop_ids}
-
-        if should_invoke_clfr:
-            result['w'] = {'value': 0, 'mae': 0, 'r2': 0}
+        result = {prop_id: {'value': 0, 'mae': 0, 'r2': 0} for prop_id in prop_ids}
 
     # production
     for prop_id in prop_ids:
+
+        if prop_id == 'w' and result.get('w', {}).get('value') == 0:
+            continue
+
         if d_dim < ml_models[prop_id].n_features_:
             continue
         elif d_dim > ml_models[prop_id].n_features_:
@@ -213,19 +221,11 @@ def get_prediction(descriptor, ml_models, prop_ids=False):
         except Exception as e:
             return None, str(e)
 
-        # classifier
-        if ml_models[prop_id].metadata.get('error_percentage'):
+        if prop_id == '0':
+            if prediction == 0:
+                result['w'] = {'value': 0, 'mae': 0, 'r2': 0}
 
-            if should_invoke_clfr:
-
-                if prediction == 0:
-                    result['w'] = {'value': 0, 'mae': 0, 'r2': 0}
-
-        # regressor
         else:
-            if prop_id == 'w' and prop_id in result:
-                continue
-
             result[prop_id] = {
                 'value': round(prediction, prop_models[prop_id]['rounding']),
                 'mae': round(ml_models[prop_id].metadata['mae'], prop_models[prop_id]['rounding']),
