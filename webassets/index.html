@@ -54,7 +54,7 @@ loop_
 <script type="text/javascript">
 "use strict";
 window.player_src = 'player.html';
-window.req_endpoint = (window.location.host.indexOf('localhost')==-1) ? 'https://tilde.pro/services/predict' : 'http://localhost:5000/predict';
+window.req_endpoint = (window.location.hostname=='localhost' || window.location.hostname=='127.0.0.1' || window.location.hostname=='') ? 'http://127.0.0.1:5000/predict' : 'https://tilde.pro/services/predict';
 window.local_supported = window.File && window.FileReader && window.FileList && window.Blob;
 window.playerdata = null;
 
