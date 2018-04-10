@@ -24,19 +24,20 @@ def is_plain_text(test):
     else: return True
 
 def html_formula(string):
-    sub, html_formula = False, ''
-    for n, i in enumerate(string):
-        if i.isdigit() or i=='.' or i=='-':
+    sub, formula = False, ''
+    for symb in string:
+        if symb.isdigit() or symb == '.' or symb == '-':
             if not sub:
-                html_formula += '<sub>'
+                formula += '<sub>'
                 sub = True
         else:
-            if sub and i != 'd':
-                html_formula += '</sub>'
+            if sub and symb != 'd':
+                formula += '</sub>'
                 sub = False
-        html_formula += i
-    if sub: html_formula += '</sub>'
-    return html_formula
+        formula += symb
+    if sub:
+        formula += '</sub>'
+    return formula
 
 if SERVE_UI:
     @app_labs.route('/', methods=['GET'])

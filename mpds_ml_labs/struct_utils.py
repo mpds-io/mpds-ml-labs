@@ -1,5 +1,4 @@
 
-import re
 import fractions
 import cStringIO
 

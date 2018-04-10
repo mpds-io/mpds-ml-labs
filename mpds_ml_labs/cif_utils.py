@@ -5,7 +5,6 @@ import numpy as np
 
 from pycodcif import parse
 
-from ase.atoms import Atoms
 from ase.spacegroup import crystal
 from ase.geometry import cell_to_cellpar
 
