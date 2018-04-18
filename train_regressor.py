@@ -8,7 +8,8 @@ import numpy as np
 import pandas as pd
 from mpds_client import MPDSDataRetrieval, MPDSExport
 
-from mpds_ml_labs.prediction import prop_models, get_descriptor, get_regr, estimate_regr_quality
+from mpds_ml_labs.prediction import prop_models, get_aligned_descriptor, get_ordered_descriptor, get_regr, estimate_regr_quality
+from mpds_ml_labs.struct_utils import json_to_ase
 from mpds_ml_labs.common import API_KEY, API_ENDPOINT
 
 
@@ -57,32 +58,25 @@ def mpds_get_data(api_client, prop_id, descriptor_kappa):
 
     print("Got %s distinct crystalline phases" % len(phases))
 
-    min_descriptor_len = 200
-    max_descriptor_len = min_descriptor_len*10
     data_by_phases = {}
 
     print("Computing descriptors...")
     pbar = ProgressBar()
     for item in pbar(api_client.get_data(
-        {
-            "props": "atomic structure",
-            "classes": "non-disordered"
-        },
-        fields={'S':['phase_id', 'entry', 'chemical_formula', 'cell_abc', 'sg_n', 'setting', 'basis_noneq', 'els_noneq']},
+        {"props": "atomic structure"},
+        fields={'S':['phase_id', 'entry', 'occs_noneq', 'cell_abc', 'sg_n', 'setting', 'basis_noneq', 'els_noneq']},
         phases=phases
     )):
-        crystal = MPDSDataRetrieval.compile_crystal(item, 'ase')
-        if not crystal:
-            continue
-        descriptor = get_descriptor(crystal, kappa=descriptor_kappa)
+        ase_obj, error = json_to_ase(item)
+        if error: continue
 
-        if len(descriptor) < min_descriptor_len:
-            descriptor = get_descriptor(crystal, kappa=descriptor_kappa, overreach=True)
-            if len(descriptor) < min_descriptor_len:
-                continue
+        if 'disordered' in ase_obj.info:
+            descriptor, error = get_ordered_descriptor(ase_obj, kappa=descriptor_kappa)
+            if error: continue
 
-        if len(descriptor) < max_descriptor_len:
-            max_descriptor_len = len(descriptor)
+        else:
+            descriptor, error = get_aligned_descriptor(ase_obj, kappa=descriptor_kappa)
+            if error: continue
 
         if item[0] in data_by_phases:
             left_len, right_len = len(data_by_phases[item[0]]), len(descriptor)
@@ -96,10 +90,12 @@ def mpds_get_data(api_client, prop_id, descriptor_kappa):
         else:
             data_by_phases[item[0]] = descriptor
 
+    min_len = min([len(x) for x in data_by_phases.values()])
     for phase_id in data_by_phases.keys():
-        data_by_phases[phase_id] = data_by_phases[phase_id][:max_descriptor_len]
+        if len(data_by_phases[phase_id]) > min_len:
+            data_by_phases[phase_id] = data_by_phases[phase_id][:min_len]
 
-    print("Current descriptor length: %d" % max_descriptor_len)
+    print("Current descriptor length: %d" % min_len)
 
     structs = pd.DataFrame(list(data_by_phases.items()), columns=['Phase', 'Descriptor'])
     struct_props = structs.merge(avgprops, how='outer', on='Phase')
