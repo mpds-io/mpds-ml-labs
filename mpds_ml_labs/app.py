@@ -5,9 +5,9 @@ import ujson as json
 
 from flask import Flask, Blueprint, Response, request, send_from_directory
 
-from struct_utils import detect_format, poscar_to_ase, symmetrize, get_formula
+from struct_utils import detect_format, poscar_to_ase, refine, get_formula
 from cif_utils import cif_to_ase, ase_to_eq_cif
-from prediction import ase_to_prediction, get_legend, load_ml_models
+from prediction import get_prediction, get_aligned_descriptor, get_ordered_descriptor, get_legend, load_ml_models
 from common import SERVE_UI, ML_MODELS
 
 
@@ -79,14 +79,23 @@ def predict():
         if error:
             return fmt_msg(error)
 
+    else: return fmt_msg('Provided data format is not supported')
+
+    if 'disordered' in ase_obj.info:
+        descriptor, error = get_ordered_descriptor(ase_obj)
+        if error:
+            return fmt_msg(error)
+
     else:
-        return fmt_msg('Provided data format is not supported')
+        ase_obj, error = refine(ase_obj)
+        if error:
+            return fmt_msg(error)
 
-    ase_obj, error = symmetrize(ase_obj)
-    if error:
-        return fmt_msg(error)
+        descriptor, error = get_aligned_descriptor(ase_obj)
+        if error:
+            return fmt_msg(error)
 
-    prediction, error = ase_to_prediction(ase_obj, active_ml_models)
+    prediction, error = get_prediction(descriptor, active_ml_models)
     if error:
         return fmt_msg(error)
 

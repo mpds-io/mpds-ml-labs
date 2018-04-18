@@ -1,5 +1,6 @@
 
 import sys
+import time
 from urllib import urlencode
 
 import httplib2
@@ -9,13 +10,14 @@ import numpy as np
 from mpds_client import MPDSDataRetrieval, APIError
 
 from prediction import prop_models
-from struct_utils import detect_format, poscar_to_ase, symmetrize, get_formula, sgn_to_crsystem
+from struct_utils import detect_format, poscar_to_ase, refine, get_formula, sgn_to_crsystem
 from cif_utils import cif_to_ase
 from common import API_KEY, API_ENDPOINT
 
 
 req = httplib2.Http()
 client = MPDSDataRetrieval(api_key=API_KEY, endpoint=API_ENDPOINT)
+ARITY = {1: 'unary', 2: 'binary', 3: 'ternary', 4: 'quaternary', 5: 'quinary'}
 
 def make_request(address, data={}, httpverb='POST', headers={}):
 
@@ -34,6 +36,7 @@ if __name__ == '__main__':
 
     try: sys.argv[1]
     except IndexError: sys.exit("Structure file must be given!")
+    starttime = time.time()
 
     structure = open(sys.argv[1]).read()
     fmt = detect_format(structure)
@@ -48,25 +51,38 @@ if __name__ == '__main__':
         if error:
             raise RuntimeError(error)
 
-    else:
-        raise RuntimeError('Provided data format is not supported')
+    else: raise RuntimeError('Provided data format is not supported')
 
-    ase_obj, error = symmetrize(ase_obj)
-    if error:
-        raise RuntimeError(error)
+    if 'disordered' in ase_obj.info:
+        elements = sum(
+            [item.keys() for item in ase_obj.info['disordered'].values()],
+            []
+        )
+        elements = list(set(elements + [at.symbol for at in ase_obj]))
+        tpl_query = {
+            'elements': '-'.join(elements),
+            'lattices': sgn_to_crsystem(ase_obj.info['spacegroup'].no)
+        }
+        if len(elements) in ARITY:
+            tpl_query.update({'classes': ARITY[len(elements)]})
+
+    else:
+        ase_obj, error = refine(ase_obj)
+        if error:
+            raise RuntimeError(error)
+        tpl_query = {
+            'formulae': get_formula(ase_obj),
+            'lattices': sgn_to_crsystem(ase_obj.info['spacegroup'].no)
+        }
 
     answer = make_request('http://127.0.0.1:5000/predict', {'structure': structure})
     if 'error' in answer:
         raise RuntimeError(answer['error'])
 
-    formulae_categ, lattices_categ = get_formula(ase_obj), sgn_to_crsystem(ase_obj.info['spacegroup'].no)
     for prop_id, pdata in prop_models.items():
+        tpl_query.update({'props': pdata['name']})
         try:
-            resp = client.get_dataframe({
-                'formulae': formulae_categ,
-                'lattices': lattices_categ,
-                'props': pdata['name']
-            })
+            resp = client.get_dataframe(tpl_query)
         except APIError as e:
             prop_models[prop_id]['factual'] = None
             if e.code == 1:
@@ -86,3 +102,5 @@ if __name__ == '__main__':
             pdata['mae'],
             prop_models[prop_id]['units']
         ))
+
+    print("Done in %1.2f sc" % (time.time() - starttime))

@@ -1,7 +1,9 @@
 
 import os, sys
 
-from struct_utils import detect_format, poscar_to_ase, symmetrize
+import numpy as np
+
+from struct_utils import detect_format, poscar_to_ase, refine
 from cif_utils import cif_to_ase
 from prediction import ase_to_prediction, load_ml_models, prop_models
 from common import ML_MODELS, DATA_PATH
@@ -11,11 +13,16 @@ models, structures = [], []
 
 if sys.argv[1:]:
     inputs = [f for f in sys.argv[1:] if os.path.isfile(f)]
+
     models, structures = [
         f for f in inputs if f.endswith('.pkl')
     ], [
         f for f in inputs if not f.endswith('.pkl')
     ]
+
+if len(sys.argv) > 1 and os.path.isdir(sys.argv[1]):
+    target = sys.argv[1]
+    structures = [os.path.join(target, f) for f in os.listdir(target) if os.path.isfile(os.path.join(target, f))]
 
 if not models:
     models = ML_MODELS
@@ -26,8 +33,7 @@ if not structures:
 active_ml_models = load_ml_models(models)
 
 for fname in structures:
-    print
-    print(fname)
+    print(fname + "="*40)
     structure = open(fname).read()
 
     fmt = detect_format(structure)
@@ -48,10 +54,11 @@ for fname in structures:
         print('Error: %s is not a crystal structure' % fname)
         continue
 
-    ase_obj, error = symmetrize(ase_obj)
-    if error:
-        print(error)
-        continue
+    if 'disordered' not in ase_obj.info:
+        ase_obj, error = refine(ase_obj)
+        if error:
+            print(error)
+            continue
 
     prediction, error = ase_to_prediction(ase_obj, active_ml_models)
     if error:
