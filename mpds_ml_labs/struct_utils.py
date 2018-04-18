@@ -1,8 +1,11 @@
 
+import math
+import random
+import itertools
 import fractions
 import cStringIO
 
-from ase.atoms import Atoms
+from ase.atoms import Atom, Atoms
 from ase.io.vasp import read_vasp
 from ase.spacegroup import crystal
 
@@ -42,13 +45,65 @@ def poscar_to_ase(poscar_string):
     buff = cStringIO.StringIO(poscar_string)
     try:
         ase_obj = read_vasp(buff)
-    except:
-        error = 'Unexpected data occured in POSCAR'
+    except AttributeError:
+        error = 'Types of atoms cannot be neither found nor inferred'
+    except Exception:
+        error = 'Cannot process POSCAR: invalid or missing data'
     buff.close()
     return ase_obj, error
 
 
-def symmetrize(ase_obj, accuracy=1E-03):
+def json_to_ase(datarow):
+    """
+    An extended *mpds_client* static *compile_crystal* method
+    for handling the disordered structures
+    in an oversimplified, very narrow-purpose way
+    """
+    if not datarow or not datarow[-1]:
+        return None, "No structure found"
+
+    occs_noneq, cell_abc, sg_n, setting, basis_noneq, els_noneq = \
+        datarow[-6], datarow[-5], int(datarow[-4]), datarow[-3], datarow[-2], datarow[-1]
+
+    occ_data = None
+    if any([occ != 1 for occ in occs_noneq]):
+        partial_pos, occ_data = {}, {}
+        for n in range(len(occs_noneq) - 1, -1, -1):
+            if occs_noneq[n] != 1:
+                disordered_pos = basis_noneq.pop(n)
+                disordered_el = els_noneq.pop(n)
+                partial_pos.setdefault(tuple(disordered_pos), {})[disordered_el] = occs_noneq[n]
+
+        for xyz, occs in partial_pos.items():
+            index = len(els_noneq)
+            els_noneq.append(sorted(occs.keys())[0])
+            basis_noneq.append(xyz)
+            occ_data[index] = occs
+
+    atom_data = []
+    setting = 2 if setting == '2' else 1
+
+    for n, xyz in enumerate(basis_noneq):
+        atom_data.append(Atom(els_noneq[n], tuple(xyz), tag=n))
+
+    if not atom_data:
+        return None, "No atoms found"
+
+    try:
+        return crystal(
+            atom_data,
+            spacegroup=sg_n,
+            cellpar=cell_abc,
+            primitive_cell=True,
+            setting=setting,
+            onduplicates='error',
+            info=dict(disordered=occ_data) if occ_data else {}
+        ), None
+    except:
+        return None, "ASE cannot handle structure"
+
+
+def refine(ase_obj, accuracy=1E-03):
     """
     Refine ASE structure using spglib
 
@@ -69,7 +124,7 @@ def symmetrize(ase_obj, accuracy=1E-03):
     try:
         spacegroup = int( symmetry.split()[1].replace("(", "").replace(")", "") )
     except (ValueError, IndexError):
-        return None, 'Symmetry error (probably, coinciding atoms) in structure'
+        return None, 'Symmetry error (coinciding atoms?) in structure'
 
     try:
         return crystal(
@@ -129,3 +184,66 @@ def sgn_to_crsystem(number):
         return 'monoclinic'
     else:
         return 'triclinic'
+
+
+MAX_ATOMS = 1000
+SITE_SUM_OCCS_TOL = 0.99
+
+def order_disordered(ase_obj):
+    """
+    This is a toy algo to get rid of the structural disorder;
+    just one random possible ordered structure is returned
+    (out of may be billions). No attempt to embrace all permutations is made.
+    For that one needs to consider the special-purpose software (e.g.
+    https://doi.org/10.1186/s13321-016-0129-3 etc.).
+
+    Args:
+        ase_obj: (object) ASE structure; must have *info* dict *disordered* and *Atom* tags
+
+    Returns:
+        ASE structure (object) *or* None
+        None *or* error (str)
+    """
+    for index in ase_obj.info['disordered'].keys():
+        if sum(ase_obj.info['disordered'][index].values()) < SITE_SUM_OCCS_TOL:
+            ase_obj.info['disordered'][index].update(
+                {'X': 1 - sum(ase_obj.info['disordered'][index].values())}
+            )
+
+    min_occ = min(
+        sum(
+            [item.values() for item in ase_obj.info['disordered'].values()],
+            []
+        )
+    )
+
+    needed_det = math.ceil(1. / min_occ)
+    if needed_det * len(ase_obj) > MAX_ATOMS:
+        return None, 'Supercell size x%s is too big' % int(needed_det)
+
+    diag = needed_det ** (1. / 3)
+    supercell_matrix = [int(x) for x in (round(diag), math.ceil(diag), math.ceil(diag))]
+    actual_det = reduce(lambda x, y: x * y, supercell_matrix)
+
+    occ_data = {}
+    for index, occs in ase_obj.info['disordered'].items():
+        disorder = []
+        for el, occ in occs.items():
+            disorder += [el] * int(round(occ * actual_det))
+        random.shuffle(disorder)
+        occ_data[index] = itertools.cycle(disorder)
+
+    order_obj = ase_obj.copy()
+    order_obj *= supercell_matrix
+    del order_obj.info['disordered']
+
+    for index, occs in occ_data.items():
+        for n in range(len(order_obj) - 1, -1, -1):
+            if order_obj[n].tag == index:
+                distrib_el = occs.next()
+                if distrib_el == 'X':
+                    del order_obj[n]
+                else:
+                    order_obj[n].symbol = distrib_el
+
+    return order_obj, None

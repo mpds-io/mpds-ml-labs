@@ -9,6 +9,8 @@ from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error, r2_score, confusion_matrix
 
+from struct_utils import order_disordered
+
 
 prop_models = {
     'w': {
@@ -90,6 +92,9 @@ periodic_numbers = [0,
 pmin, pmax = 1, max(periodic_numbers)
 periodic_numbers_normed = [(i - pmin)/(pmax - pmin) for i in periodic_numbers]
 
+MIN_DESCRIPTOR_LEN = 200
+N_ITER_DISORDER = 5
+
 
 def get_descriptor(ase_obj, kappa=None, overreach=False):
     """
@@ -104,7 +109,7 @@ def get_descriptor(ase_obj, kappa=None, overreach=False):
     norms = np.array([ np.linalg.norm(vec) for vec in ase_obj.get_cell() ])
     multiple = np.ceil(kappa / norms).astype(int)
     ase_obj = ase_obj.repeat(multiple)
-    com = ase_obj.get_center_of_mass() # NB use recent ase version here, because of the new element symbols
+    com = ase_obj.get_center_of_mass()
     ase_obj.translate(-com)
     del ase_obj[
         [atom.index for atom in ase_obj if np.sqrt(np.dot(atom.position, atom.position)) > kappa]
@@ -126,6 +131,49 @@ def get_descriptor(ase_obj, kappa=None, overreach=False):
         ])
 
     return np.array(DV).flatten()
+
+
+def get_ordered_descriptor(ase_obj, kappa=None, overreach=False):
+    if 'disordered' not in ase_obj.info:
+        return None, "Expected disordered structure, got ordered structure"
+
+    descriptor = None
+    for _ in range(N_ITER_DISORDER):
+        order_obj, error = order_disordered(ase_obj)
+        if error: return None, error
+
+        interim_descriptor = get_descriptor(order_obj, kappa=kappa, overreach=overreach)
+        if len(interim_descriptor) < MIN_DESCRIPTOR_LEN:
+            if overreach:
+                return None, "Cannot get proper descriptor"
+
+            interim_descriptor = get_descriptor(order_obj, kappa=kappa, overreach=True)
+            if len(interim_descriptor) < MIN_DESCRIPTOR_LEN:
+                return None, "Cannot get proper descriptor"
+
+        if descriptor is not None:
+            left_len, right_len = len(descriptor), len(interim_descriptor)
+
+            if left_len != right_len: # align length
+                descriptor =         descriptor[:min(left_len, right_len)]
+                interim_descriptor = interim_descriptor[:min(left_len, right_len)]
+
+            descriptor = (descriptor + interim_descriptor)/2
+        else:
+            descriptor = interim_descriptor[:]
+
+    return descriptor, None
+
+
+def get_aligned_descriptor(ase_obj, kappa=None):
+
+    descriptor = get_descriptor(ase_obj, kappa=kappa)
+    if len(descriptor) < MIN_DESCRIPTOR_LEN:
+        descriptor = get_descriptor(ase_obj, kappa=kappa, overreach=True)
+        if len(descriptor) < MIN_DESCRIPTOR_LEN:
+            return None, "Cannot get proper descriptor"
+
+    return descriptor, None
 
 
 def load_ml_models(prop_model_files):
@@ -168,11 +216,45 @@ def get_legend(pred_dict):
 
 
 def ase_to_prediction(ase_obj, ml_models, prop_ids=False):
-    return get_prediction(
-        get_descriptor(ase_obj, overreach=True),
-        ml_models,
-        prop_ids
-    )
+    """
+    Higher-level prediction handler that is able to
+    resolve disordered structures
+
+    Returns:
+        Prediction (dict) *or* None
+        None *or* error (str)
+    """
+    if 'disordered' in ase_obj.info:
+        results, avg_results = {}, {}
+        for _ in range(N_ITER_DISORDER):
+            order_obj, error = order_disordered(ase_obj)
+            if error:
+                return None, error
+
+            sample, error = ase_to_prediction(order_obj, ml_models, prop_ids)
+            if error:
+                return None, error
+
+            for prop_id, pdata in sample.items():
+                avg_results.setdefault(prop_id, []).append(pdata['value'])
+
+        for prop_id, values in avg_results.items():
+            if prop_id == 'w' and values.count(0) == 1: # considering classifier error
+                values.remove(0)
+
+            results[prop_id] = {
+                'value': round(np.median(values), prop_models[prop_id]['rounding']),
+                'mae': round(ml_models[prop_id].metadata['mae'], prop_models[prop_id]['rounding']),
+                'r2': ml_models[prop_id].metadata['r2']
+            }
+
+        return results, None
+
+    descriptor, error = get_aligned_descriptor(ase_obj)
+    if error:
+        return None, error
+
+    return get_prediction(descriptor, ml_models, prop_ids)
 
 
 def get_prediction(descriptor, ml_models, prop_ids=False):
@@ -180,6 +262,10 @@ def get_prediction(descriptor, ml_models, prop_ids=False):
     Execute all the regressor models againts a given structure desriptor;
     the results of the "w" regressor model will depend on
     the output of the "0" binary classifier model
+
+    Returns:
+        Prediction (dict) *or* None
+        None *or* error (str)
     """
     if not prop_ids:
         prop_ids = ml_models.keys()
