@@ -19,8 +19,8 @@ def get_clfr(params={}):
     return RandomForestClassifier(**params)
 
 param_dist = {
-    "n_estimators": range(20, 501, 20),
-    "max_features": range(5, 31) + [35, 40],
+    "n_estimators": range(25, 501, 25),
+    "max_features": range(10, 101, 2),
     "max_depth": [None, 10, 25, 50, 75],
     "min_samples_split": [2, 4, 10],
     "min_samples_leaf": [1, 3, 5, 7, 14],
@@ -50,7 +50,7 @@ if __name__ == "__main__":
 
     starttime = time.time()
 
-    search = RandomizedSearchCV(get_clfr(), param_distributions=param_dist, n_iter=5000, cv=2, verbose=2)
+    search = RandomizedSearchCV(get_clfr(), param_distributions=param_dist, n_iter=7500, cv=2, verbose=2)
     search.fit(X, y)
     error_percentage = estimate_clfr_quality(get_clfr(search.best_params_), X, y)
 
