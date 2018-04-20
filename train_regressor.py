@@ -139,7 +139,7 @@ def tune_model(data_file):
     parameter_a = results[-1][0]
 
     results = []
-    for parameter_b in range(1, 13):
+    for parameter_b in range(5, 31):
         avg_mae, avg_r2 = estimate_regr_quality(get_regr(a=parameter_a, b=parameter_b), X, y)
         results.append([parameter_b, avg_mae, avg_r2])
         print("%s\t\t\t%s\t\t\t%s" % (parameter_b, avg_mae, avg_r2))

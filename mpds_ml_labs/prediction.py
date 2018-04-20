@@ -93,7 +93,7 @@ pmin, pmax = 1, max(periodic_numbers)
 periodic_numbers_normed = [(i - pmin)/(pmax - pmin) for i in periodic_numbers]
 
 MIN_DESCRIPTOR_LEN = 200
-N_ITER_DISORDER = 5
+N_ITER_DISORDER = 6
 
 
 def get_descriptor(ase_obj, kappa=None, overreach=False):
@@ -125,12 +125,12 @@ def get_descriptor(ase_obj, kappa=None, overreach=False):
         ase_obj.get_chemical_symbols(),
         ase_obj.get_scaled_positions()
     ):
-        DV.append([
+        DV.extend([
             periodic_numbers_normed[periodic_elements.index(atom[0])],
             np.sqrt(atom[1][0]**2 + atom[1][1]**2 + atom[1][2]**2)
         ])
 
-    return np.array(DV).flatten()
+    return np.array(DV)
 
 
 def get_ordered_descriptor(ase_obj, kappa=None, overreach=False):
