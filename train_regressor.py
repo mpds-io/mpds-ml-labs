@@ -79,21 +79,21 @@ def mpds_get_data(api_client, prop_id, descriptor_kappa):
             if error: continue
 
         if item[0] in data_by_phases:
-            left_len, right_len = len(data_by_phases[item[0]]), len(descriptor)
+            left_len, right_len = len(data_by_phases[item[0]][0]), len(descriptor[0])
 
             if left_len != right_len: # align length
-                data_by_phases[item[0]] = data_by_phases[item[0]][:min(left_len, right_len)]
-                descriptor = descriptor[:min(left_len, right_len)]
+                data_by_phases[item[0]] = data_by_phases[item[0]][:, :min(left_len, right_len)]
+                descriptor = descriptor[:, :min(left_len, right_len)]
 
             data_by_phases[item[0]] = (data_by_phases[item[0]] + descriptor)/2
 
         else:
             data_by_phases[item[0]] = descriptor
 
-    min_len = min([len(x) for x in data_by_phases.values()])
+    min_len = min([len(x[0]) for x in data_by_phases.values()])
     for phase_id in data_by_phases.keys():
-        if len(data_by_phases[phase_id]) > min_len:
-            data_by_phases[phase_id] = data_by_phases[phase_id][:min_len]
+        if len(data_by_phases[phase_id][0]) > min_len:
+            data_by_phases[phase_id] = data_by_phases[phase_id][:, :min_len]
 
     print("Current descriptor length: %d" % min_len)
 
@@ -126,6 +126,8 @@ def tune_model(data_file):
     df = pd.read_pickle(data_file)
 
     X = np.array(df['Descriptor'].tolist())
+    n_samples, n_x, n_y = X.shape
+    X = X.reshape(n_samples, n_x * n_y)
     y = df['Avgvalue'].tolist()
 
     results = []
@@ -180,6 +182,8 @@ if __name__ == "__main__":
         struct_props = mpds_get_data(api_client, arg, descriptor_kappa)
 
         X = np.array(struct_props['Descriptor'].tolist())
+        n_samples, n_x, n_y = X.shape
+        X = X.reshape(n_samples, n_x * n_y)
         y = struct_props['Avgvalue'].tolist()
 
         avg_mae, avg_r2 = estimate_regr_quality(get_regr(), X, y)

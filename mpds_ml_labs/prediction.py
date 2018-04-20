@@ -89,10 +89,7 @@ periodic_numbers = [0,
 6,   12,    16,    18,   20,  22,   24,    26,   28,   30,   32,   34,   36,   38,   40,  42,   44,    48,   52,   56,   60,   64,   68,   72,   76,   80,   86,   92,   98,  104,  110,  117,
 7,   13,    17,    19,   21,  23,   25,    27,   29,   31,   33,   35,   37,   39,   41,  43,   45,    49,   53,   57,   61,   65,   69,   73,   77,   81,   87,   93,   99,  105,  111,  118]
 
-pmin, pmax = 1, max(periodic_numbers)
-periodic_numbers_normed = [(i - pmin)/(pmax - pmin) for i in periodic_numbers]
-
-MIN_DESCRIPTOR_LEN = 200
+MIN_DESCRIPTOR_LEN = 100
 N_ITER_DISORDER = 6
 
 
@@ -120,17 +117,12 @@ def get_descriptor(ase_obj, kappa=None, overreach=False):
     sorted_seq = np.argsort(np.fromiter((np.sqrt(np.dot(x, x)) for x in ase_obj.positions), np.float))
     ase_obj = ase_obj[sorted_seq]
 
-    DV = []
-    for atom in zip(
-        ase_obj.get_chemical_symbols(),
-        ase_obj.get_scaled_positions()
-    ):
-        DV.extend([
-            periodic_numbers_normed[periodic_elements.index(atom[0])],
-            np.sqrt(atom[1][0]**2 + atom[1][1]**2 + atom[1][2]**2)
-        ])
+    elements, positions = [], []
+    for atom in ase_obj:
+        elements.append(periodic_numbers[periodic_elements.index(atom.symbol)] - 1)
+        positions.append(int(round(np.sqrt(atom.position[0]**2 + atom.position[1]**2 + atom.position[2]**2) * 10)))
 
-    return np.array(DV)
+    return np.array([elements, positions])
 
 
 def get_ordered_descriptor(ase_obj, kappa=None, overreach=False):
@@ -143,20 +135,20 @@ def get_ordered_descriptor(ase_obj, kappa=None, overreach=False):
         if error: return None, error
 
         interim_descriptor = get_descriptor(order_obj, kappa=kappa, overreach=overreach)
-        if len(interim_descriptor) < MIN_DESCRIPTOR_LEN:
+        if len(interim_descriptor[0]) < MIN_DESCRIPTOR_LEN:
             if overreach:
                 return None, "Cannot get proper descriptor"
 
             interim_descriptor = get_descriptor(order_obj, kappa=kappa, overreach=True)
-            if len(interim_descriptor) < MIN_DESCRIPTOR_LEN:
+            if len(interim_descriptor[0]) < MIN_DESCRIPTOR_LEN:
                 return None, "Cannot get proper descriptor"
 
         if descriptor is not None:
-            left_len, right_len = len(descriptor), len(interim_descriptor)
+            left_len, right_len = len(descriptor[0]), len(interim_descriptor[0])
 
             if left_len != right_len: # align length
-                descriptor =         descriptor[:min(left_len, right_len)]
-                interim_descriptor = interim_descriptor[:min(left_len, right_len)]
+                descriptor =         descriptor[:, :min(left_len, right_len)]
+                interim_descriptor = interim_descriptor[:, :min(left_len, right_len)]
 
             descriptor = (descriptor + interim_descriptor)/2
         else:
@@ -168,9 +160,9 @@ def get_ordered_descriptor(ase_obj, kappa=None, overreach=False):
 def get_aligned_descriptor(ase_obj, kappa=None):
 
     descriptor = get_descriptor(ase_obj, kappa=kappa)
-    if len(descriptor) < MIN_DESCRIPTOR_LEN:
+    if len(descriptor[0]) < MIN_DESCRIPTOR_LEN:
         descriptor = get_descriptor(ase_obj, kappa=kappa, overreach=True)
-        if len(descriptor) < MIN_DESCRIPTOR_LEN:
+        if len(descriptor[0]) < MIN_DESCRIPTOR_LEN:
             return None, "Cannot get proper descriptor"
 
     return descriptor, None
@@ -277,6 +269,7 @@ def get_prediction(descriptor, ml_models, prop_ids=False):
         return None, 'Unrecognized model: ' + ', '.join(prop_ids)
 
     result = {}
+    descriptor = descriptor.flatten()
     d_dim = len(descriptor)
 
     if 'w' in prop_ids: # classifier invocation
