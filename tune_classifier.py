@@ -48,9 +48,11 @@ if __name__ == "__main__":
         if len(X[n]) > min_x_len:
             X[n] = X[n][:min_x_len]
 
+    X = np.array(X.tolist(), dtype=float)
+
     starttime = time.time()
 
-    search = RandomizedSearchCV(get_clfr(), param_distributions=param_dist, n_iter=7500, cv=2, verbose=2)
+    search = RandomizedSearchCV(get_clfr(), param_distributions=param_dist, n_iter=5000, cv=2, verbose=3)
     search.fit(X, y)
     error_percentage = estimate_clfr_quality(get_clfr(search.best_params_), X, y)
 
