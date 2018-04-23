@@ -54,7 +54,7 @@ if __name__ == "__main__":
 
     starttime = time.time()
 
-    search = RandomizedSearchCV(get_regr(), param_distributions=param_dist, n_iter=7500, cv=2, verbose=3)
+    search = RandomizedSearchCV(get_regr(), param_distributions=param_dist, n_iter=2500, cv=2, verbose=3)
     search.fit(X, y)
     avg_mae, avg_r2 = estimate_regr_quality(get_regr(search.best_params_), X, y)
 

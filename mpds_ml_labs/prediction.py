@@ -265,6 +265,10 @@ def get_prediction(descriptor, ml_models, prop_ids=False):
     if type(prop_ids) != list:
         prop_ids = prop_ids.split()
 
+    # testing
+    if not ml_models:
+        return {prop_id: {'value': 0, 'mae': 0, 'r2': 0} for prop_id in prop_ids}, None
+
     if not set(prop_ids).issubset(ml_models.keys()):
         return None, 'Unrecognized model: ' + ', '.join(prop_ids)
 
@@ -277,10 +281,6 @@ def get_prediction(descriptor, ml_models, prop_ids=False):
             return None, 'Classifier model is required but not available'
         if '0' not in prop_ids:
             prop_ids.append('0')
-
-    # testing
-    if not ml_models:
-        result = {prop_id: {'value': 0, 'mae': 0, 'r2': 0} for prop_id in prop_ids}
 
     # production
     for prop_id in prop_ids:
