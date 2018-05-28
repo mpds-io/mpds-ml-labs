@@ -65,7 +65,7 @@ def predict():
         return fmt_msg('Invalid request')
 
     structure = request.values.get('structure')
-    if not 0 < len(structure) < 32768:
+    if not 0 < len(structure) < 200000:
         return fmt_msg('Request size is invalid')
 
     if not is_plain_text(structure):
