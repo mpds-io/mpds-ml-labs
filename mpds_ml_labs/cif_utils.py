@@ -113,10 +113,11 @@ def ase_to_eq_cif(ase_obj, supply_sg=True):
     mostly for debugging
     """
     if supply_sg:
-        sg_hm = getattr(ase_obj.info.get('spacegroup', object), 'symbol', 'P1')
-        sg_n = getattr(ase_obj.info.get('spacegroup', object), 'no', 1)
-    else:
-        sg_hm, sg_n = 'P1', 1
+        sg_string = "_symmetry_space_group_name_H-M '%s'\n_symmetry_Int_Tables_number %s\n" % (
+            getattr(ase_obj.info.get('spacegroup', object), 'symbol', 'P1'),
+            getattr(ase_obj.info.get('spacegroup', object), 'no', 1)
+        )
+    else: sg_string = ""
 
     parameters = cell_to_cellpar(ase_obj.cell)
 
@@ -127,8 +128,7 @@ def ase_to_eq_cif(ase_obj, supply_sg=True):
     cif_data += '_cell_angle_alpha ' + "%2.6f" % parameters[3] + "\n"
     cif_data += '_cell_angle_beta  ' + "%2.6f" % parameters[4] + "\n"
     cif_data += '_cell_angle_gamma ' + "%2.6f" % parameters[5] + "\n"
-    cif_data += "_symmetry_space_group_name_H-M '%s'" % sg_hm + "\n"
-    cif_data += "_symmetry_Int_Tables_number %s" % sg_n + "\n"
+    cif_data += sg_string
     cif_data += 'loop_' + "\n"
     cif_data += ' _symmetry_equiv_pos_as_xyz' + "\n"
     cif_data += ' +x,+y,+z' + "\n"
