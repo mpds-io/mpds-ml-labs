@@ -8,3 +8,4 @@ pandas
 sklearn
 mpds_client
 progressbar
+pg8000

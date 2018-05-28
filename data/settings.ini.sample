@@ -5,3 +5,11 @@ ml_models =
     /path_to_models/model_two.pkl
 api_key =
 api_endpoint =
+
+[db]
+user = postgres
+password =
+database = materials_ai
+table = ml_knn
+host = localhost
+port = 5432

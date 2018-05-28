@@ -19,8 +19,29 @@ if os.path.exists(config_path):
         path.strip() for path in filter(None, ML_MODELS.split())
     ]
 
+    KNN_TABLE = config.get('db', 'table')
+
 else:
     SERVE_UI = True
     ML_MODELS = []
     API_KEY = None
     API_ENDPOINT = None
+
+    KNN_TABLE = None
+
+
+def connect_database():
+    import pg8000
+
+    assert KNN_TABLE
+
+    connection = pg8000.connect(
+        user=config.get('db', 'user'),
+        password=config.get('db', 'password'),
+        database=config.get('db', 'database'),
+        host=config.get('db', 'host'),
+        port=config.getint('db', 'port')
+    )
+    cursor = connection.cursor()
+
+    return cursor, connection
