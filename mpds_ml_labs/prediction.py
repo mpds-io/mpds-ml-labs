@@ -1,15 +1,12 @@
 
 from __future__ import division
 import os
-import cPickle
 
 import numpy as np
 
 from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error, r2_score, confusion_matrix
-
-from struct_utils import order_disordered
 
 
 prop_models = {
@@ -89,8 +86,10 @@ periodic_numbers = [0,
 6,   12,    16,    18,   20,  22,   24,    26,   28,   30,   32,   34,   36,   38,   40,  42,   44,    48,   52,   56,   60,   64,   68,   72,   76,   80,   86,   92,   98,  104,  110,  117,
 7,   13,    17,    19,   21,  23,   25,    27,   29,   31,   33,   35,   37,   39,   41,  43,   45,    49,   53,   57,   61,   65,   69,   73,   77,   81,   87,   93,   99,  105,  111,  118]
 
+electronegativities = [0, 2.2, 0, 0.98, 1.57, 2.04, 2.55, 3.04, 3.44, 3.98, 0, 0.93, 1.31, 1.61, 1.9, 2.19, 2.58, 3.16, 0, 0.82, 1, 1.36, 1.54, 1.63, 1.66, 1.55, 1.83, 1.88, 1.91, 1.9, 1.65, 1.81, 2.01, 2.18, 2.55, 2.96, 3, 0.82, 0.95, 1.22, 1.33, 1.6, 2.16, 1.9, 2.2, 2.28, 2.2, 1.93, 1.69, 1.78, 1.96, 2.05, 2.1, 2.66, 2.6, 0.79, 0.89, 1.1, 1.12, 1.13, 1.14, 1.13, 1.17, 1.2, 1.2, 1.1, 1.22, 1.23, 1.24, 1.25, 1.1, 1.27, 1.3, 1.5, 2.36, 1.9, 2.2, 2.2, 2.28, 2.54, 2, 1.62, 2.33, 2.02, 2, 2.2, 0, 0.7, 0.9, 1.1, 1.3, 1.5, 1.38, 1.36, 1.28, 1.3, 1.3, 1.3, 1.3, 1.3, 1.3, 1.3, 1.3, 1.3, 0, 0, 0, 0, 0, 0]
+
 MIN_DESCRIPTOR_LEN = 100
-N_ITER_DISORDER = 6
+N_ITER_DISORDER = 4
 
 
 def get_descriptor(ase_obj, kappa=None, overreach=False):
@@ -128,6 +127,8 @@ def get_descriptor(ase_obj, kappa=None, overreach=False):
 def get_ordered_descriptor(ase_obj, kappa=None, overreach=False):
     if 'disordered' not in ase_obj.info:
         return None, "Expected disordered structure, got ordered structure"
+
+    from struct_utils import order_disordered
 
     descriptor = None
     for _ in range(N_ITER_DISORDER):
@@ -169,6 +170,7 @@ def get_aligned_descriptor(ase_obj, kappa=None):
 
 
 def load_ml_models(prop_model_files):
+    import cPickle
     ml_models = {}
     for file_name in prop_model_files:
         if not os.path.exists(file_name):
@@ -217,6 +219,9 @@ def ase_to_prediction(ase_obj, ml_models, prop_ids=False):
         None *or* error (str)
     """
     if 'disordered' in ase_obj.info:
+
+        from struct_utils import order_disordered
+
         results, avg_results = {}, {}
         for _ in range(N_ITER_DISORDER):
             order_obj, error = order_disordered(ase_obj)
