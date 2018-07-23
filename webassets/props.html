@@ -1,18 +1,85 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<title>Data-driven predictions from the crystalline structure</title>
+<title>Predictions of Properties | MPDS</title>
 <meta charset="utf-8" />
-<link rel="stylesheet" type="text/css" href="index.css" />
-<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<link rel="stylesheet" type="text/css" href="common.css" />
+<style type="text/css">
+/* MAIN */
+
+body{background:#f6f6f6;}
+
+div.button{cursor:pointer;font-size:2vmin;font-weight:normal;text-align:center;border:1px solid #3e3f95;background:#3e3f95;color:#fff;line-height:3vmin;border-radius:2px;text-decoration:none;box-shadow:inset 0 2px 2px rgba(255,255,255,0.3), inset 0 -2px 2px rgba(0,0,0,0.3), inset 0 20px 10px rgba(255,255,255,0.3), 0 0 2px 1px rgba(0,0,0,0.2), 0 2px 2px rgba(0,0,0,0.3);}
+div.content{width:65%;margin:0 auto;}
+
+#results{display:none;margin-top:38px;}
+
+#resultbox{float:left;width:70%;}
+#resultbox ul li{font-size:1.75vmin;line-height:3vmin;list-style-position:inside;}
+#resultbox i{font-family:"Courier New",Courier;font-weight:bold;}
+#resultbox a{text-decoration:none;color:#900;border-bottom:1px solid #900;}
+
+#ctrlbox{float:right;width:160px;}
+#ctrlbox > div.button{width:100%;}
+
+#playerbox{display:none;margin:0 auto 4vmin;}
+#playerbox iframe{margin-top:1vmin;border:1px solid #EAEAEA;box-shadow:0px 1px 1px 0px rgba(0,0,0,0.2);}
+
+#inputbox{padding-bottom:45px;}
+#inputbox textarea{width:100%;height:45vmin;padding:2vmin;font-size:1.5vmin;color:#000;font-family:"Courier New",Courier;}
+#inputbox p{font-size:2vmin;line-height:3vmin;margin:4vmin 0;text-align:center;}
+#inputbox p a{text-decoration:none;color:#900;border-bottom:1px solid #900;}
+#inputbox > div.button{margin:4vmin auto 0;width:160px;}
+
+#fileapi_container{
+    display:none;
+    width:100%;
+    height:3vmin;
+    position:relative;
+    margin:3vmin 0;
+}
+#fileapi_container input {
+    width:100%;
+    position:absolute;
+    top:0;left:0;
+    filter:alpha(opacity=0);
+    opacity:0;
+}
+#fileapi_container div {
+    width:100%;
+    position:absolute;
+    top:0;left:0;
+    font-size:2vmin;
+    line-height:3.5vmin;
+    text-align:center;
+}
+#fileapi_container div span {
+    text-decoration:none;color:#900;border-bottom:1px solid #900;
+}
+
+/* FOOTER */
+
+#footer{position:fixed;bottom:0;left:0;z-index:999;width:100%;height:32px;line-height:32px;text-align:center;font-size:0.85em;color:#666;background:#fff;border-top:1px solid #888;letter-spacing:0.5px;}
+#footer a{text-decoration:none;color:#900;border-bottom:1px solid #900;}
+
+/* Spinner */
+
+#spinner{display:none;position:fixed;left:0;top:0;width:100%;height:100%;text-align:center;z-index:400;overflow:hidden;background-color:rgba(255,255,255,0.4);}
+#logo{position:absolute;float:none;top:50%;left:50%;width:80px;height:80px;margin:-40px 0 0 -40px;background-size:100%;-webkit-animation:spin 2s ease infinite;-moz-animation:spin 2s ease infinite;animation:spin 2s ease infinite;}
+@-moz-keyframes spin { 100% { -moz-transform:rotate(360deg); } }
+@-webkit-keyframes spin { 100% { -webkit-transform:rotate(360deg); } }
+@keyframes spin { 100% { transform:rotate(360deg); } }
+</style>
+<script type="text/javascript" src="jquery.min.js"></script>
 </head>
 <body>
-<div id="preloader"><div class="rect1"></div><div class="rect2"></div><div class="rect3"></div><div class="rect4"></div><div class="rect5"></div></div>
 
 <!-- COMMON NAVBAR START -->
+<div id="nav"><ol>
+    <li><a href="props.html" class="present">Properties</a></li>
+    <li><a href="design.html">Structure</a></li>
+</ol></div>
 <!-- COMMON NAVBAR END -->
-
-<div id="header" class="content"><div id="logo"></div><h1>Data-driven predictions from the crystalline structure</h1></div>
 
 <div id="results" class="content">
     <div id="resultbox"></div>
@@ -25,7 +92,7 @@
 <div id="playerbox" class="content"></div>
 
 <div id="inputbox" class="content">
-    <p>This is the proof of concept &mdash; how a relatively unsophisticated statistical model (<a href="https://en.wikipedia.org/wiki/Random_forest" target="_blank">random forest regressor</a>) trained on the large <a href="https://mpds.io" target="_blank">MPDS dataset</a> predicts physical properties from the only crystalline structure. Please, paste your structure in CIF or POSCAR format below and hit SUBMIT. The result will NOT be public.</p>
+    <p>Please, paste your CIF or POSCAR structure below and hit PREDICT. Your input will not be public.</p>
     <textarea id="input">data_example
 _cell_length_a    4.07
 _cell_length_b    4.07
@@ -44,23 +111,25 @@ loop_
  _atom_site_occupancy
  Au 0.0 0.0 0.0 1.0</textarea>
     <div id="fileapi_container"><div>Alternatively, either select the file from <span>your filesystem</span>, or drag and drop the file into this window.</div><input type="file" id="fileapi" /></div>
-    <div id="predict_trigger" class="button">Submit</div>
+    <div id="predict_trigger" class="button">Predict</div>
 </div>
 
 <div id="footer">Created by <a href="https://mpds.io" target="_blank">MPDS</a> using <a href="https://wiki.fysik.dtu.dk/ase" target="_blank">ase</a>, <a href="http://wiki.crystallography.net/cod-tools/CIF-parser" target="_blank">pycodcif</a>, <a href="https://atztogo.github.io/spglib" target="_blank">spglib</a>, <a href="http://tilde-lab.github.io/player.html" target="_blank">cifplayer</a> <i>etc.</i> The code is <a href="https://github.com/mpds-io/mpds-ml-labs" target="_blank">open-source</a>.</div>
+
+<div id="spinner"><div id="logo"></div></div>
 
 <div id="ribbon" class="github-fork-ribbon-wrapper right"><div class="github-fork-ribbon"><a href="https://github.com/mpds-io/mpds-ml-labs" target="_blank">See on GitHub</a></div></div>
 
 <script type="text/javascript">
 "use strict";
 window.player_src = 'player.html';
-window.req_endpoint = (window.location.hostname=='localhost' || window.location.hostname=='127.0.0.1' || window.location.hostname=='') ? 'http://127.0.0.1:5000/predict' : 'https://tilde.pro/services/predict';
+window.req_endpoint = (window.location.hostname=='localhost' || window.location.hostname=='127.0.0.1' || window.location.hostname=='') ? 'http://127.0.0.1:5000/predict' : 'https://labs.mpds.io/predict';
 window.local_supported = window.File && window.FileReader && window.FileList && window.Blob;
 window.playerdata = null;
 
-function show_preloader(){ $('#preloader').show(); }
+function show_preloader(){ $('#spinner').show(); }
 
-function hide_preloader(){ $('#preloader').hide(); }
+function hide_preloader(){ $('#spinner').hide(); }
 
 function cancel_event(evt){
     evt = evt || window.event;
@@ -145,14 +214,14 @@ $(document).ready(function(){
             structure: $('#input').val()
 
         }, beforeSend: show_preloader}).always(function(){
-            $('#predict_trigger').data('busy', false).text('Submit');
+            $('#predict_trigger').data('busy', false).text('Predict');
             hide_preloader();
 
         }).done(function(data){
             process_result(data);
 
         }).fail(function(xhr, textStatus, errorThrown){
-            $('#predict_trigger').data('busy', false).text('Submit');
+            $('#predict_trigger').data('busy', false).text('Predict');
             if (xhr.responseJSON && xhr.responseJSON.error) alert(xhr.responseJSON.error);
             else alert('A network error occured. Please, try again');
 
