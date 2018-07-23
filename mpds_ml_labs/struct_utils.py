@@ -46,7 +46,7 @@ def poscar_to_ase(poscar_string):
     try:
         ase_obj = read_vasp(buff)
     except AttributeError:
-        error = 'Types of atoms cannot be neither found nor inferred'
+        error = 'Types of atoms can be neither found nor inferred'
     except Exception:
         error = 'Cannot process POSCAR: invalid or missing data'
     buff.close()
@@ -58,6 +58,9 @@ def json_to_ase(datarow):
     An extended *mpds_client* static *compile_crystal* method
     for handling the disordered structures
     in an oversimplified, very narrow-purpose way
+
+    TODO?
+    Avoid els_noneq rewriting
     """
     if not datarow or not datarow[-1]:
         return None, "No structure found"
@@ -199,12 +202,16 @@ def order_disordered(ase_obj):
 
     Args:
         ase_obj: (object) ASE structure; must have *info* dict *disordered* and *Atom* tags
+            *disordered* dict format: {'disordered': {at_index: {element: occupancy, ...}, ...}
 
     Returns:
         ASE structure (object) *or* None
         None *or* error (str)
+
+    TODO?
+    Rewrite space group info accordingly
     """
-    for index in ase_obj.info['disordered'].keys():
+    for index in ase_obj.info['disordered']:
         if sum(ase_obj.info['disordered'][index].values()) < SITE_SUM_OCCS_TOL:
             ase_obj.info['disordered'][index].update(
                 {'X': 1 - sum(ase_obj.info['disordered'][index].values())}

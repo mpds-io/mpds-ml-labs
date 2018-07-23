@@ -5,10 +5,13 @@ import ujson as json
 
 from flask import Flask, Blueprint, Response, request, send_from_directory
 
-from struct_utils import detect_format, poscar_to_ase, refine, get_formula
+from struct_utils import detect_format, poscar_to_ase, refine, get_formula, order_disordered
 from cif_utils import cif_to_ase, ase_to_eq_cif
-from prediction import get_prediction, get_aligned_descriptor, get_ordered_descriptor, get_legend, load_ml_models
-from common import SERVE_UI, ML_MODELS
+from prediction import prop_models, get_prediction, get_aligned_descriptor, get_ordered_descriptor, get_legend, load_ml_models
+from common import SERVE_UI, ML_MODELS, connect_database
+from knn_sample import knn_sample
+from similar_els import materialize, score
+from prediction_ranges import TOL_QUALITY
 
 
 app_labs = Blueprint('app_labs', __name__)
@@ -41,14 +44,29 @@ def html_formula(string):
 
 if SERVE_UI:
     @app_labs.route('/', methods=['GET'])
+    @app_labs.route('/props.html', methods=['GET'])
     def index():
-        return send_from_directory(static_path, 'index.html')
-    @app_labs.route('/index.css', methods=['GET'])
-    def style():
-        return send_from_directory(static_path, 'index.css')
+        return send_from_directory(static_path, 'props.html')
+
+    @app_labs.route('/common.css', methods=['GET'])
+    def css():
+        return send_from_directory(static_path, 'common.css')
+
     @app_labs.route('/player.html', methods=['GET'])
     def player():
         return send_from_directory(static_path, 'player.html')
+
+    @app_labs.route('/design.html', methods=['GET'])
+    def md():
+        return send_from_directory(static_path, 'design.html')
+
+    @app_labs.route('/jquery.min.js', methods=['GET'])
+    def jquery():
+        return send_from_directory(static_path, 'jquery.min.js')
+
+    @app_labs.route('/nouislider.min.js', methods=['GET'])
+    def nouislider():
+        return send_from_directory(static_path, 'nouislider.min.js')
 
 @app_labs.after_request
 def add_cors_header(response):
@@ -57,11 +75,16 @@ def add_cors_header(response):
 
 @app_labs.route("/predict", methods=['POST'])
 def predict():
+    """
+    A main endpoint for the properties
+    prediction, based on the provided CIF
+    or POSCAR
+    """
     if 'structure' not in request.values:
         return fmt_msg('Invalid request')
 
     structure = request.values.get('structure')
-    if not 0 < len(structure) < 32768:
+    if not 0 < len(structure) < 200000:
         return fmt_msg('Request size is invalid')
 
     if not is_plain_text(structure):
@@ -115,6 +138,110 @@ def predict():
         ),
         content_type='application/json'
     )
+
+@app_labs.route("/download_cif", methods=['POST'])
+def download_cif():
+    """
+    An utility endpoint to force
+    a browser file (CIF) download
+    """
+    structure = request.values.get('structure')
+    title = request.values.get('title')
+
+    if not structure or not title:
+        return fmt_msg('Invalid request')
+
+    if not 0 < len(structure) < 100000:
+        return fmt_msg('Request size is invalid')
+
+    return Response(structure, mimetype="chemical/x-cif", headers={
+        "Content-Disposition": "attachment;filename=%s.cif" % title
+    })
+
+@app_labs.route("/design", methods=['POST'])
+def design():
+    """
+    A main endpoint for generating
+    the CIF structure based on
+    the provided values of the properties
+    """
+    if 'numerics' not in request.values:
+        return fmt_msg('Invalid request')
+
+    try: numerics = json.loads(request.values.get('numerics'))
+    except:
+        return fmt_msg('Invalid request')
+    if type(numerics) != dict:
+        return fmt_msg('Invalid request')
+
+    user_ranges_dict = {}
+
+    for prop_id in prop_models:
+        if prop_id not in numerics or type(numerics[prop_id]) != list or len(numerics[prop_id]) != 2:
+            return fmt_msg('Invalid request')
+        try: user_ranges_dict[prop_id + '_min'], user_ranges_dict[prop_id + '_max'] = float(numerics[prop_id][0]), float(numerics[prop_id][1])
+        except:
+            return fmt_msg('Invalid request')
+
+    if user_ranges_dict['w_min'] == 0 and user_ranges_dict['w_max'] == 0:
+        user_ranges_dict['w_min'], user_ranges_dict['w_max'] = -100, 100 # NB. any band gap is allowed
+
+    cursor, connection = connect_database()
+
+    result, error = None, "No results (outside of prediction capabilities)"
+
+    els_samples = knn_sample(cursor, user_ranges_dict)
+    for els_sample in els_samples:
+        #print "TRYING TO MATERIALIZE", ", ".join(els_sample)
+
+        scoring, error = materialize(els_sample, active_ml_models)
+        if error or not scoring:
+            continue
+
+        result = score(scoring, user_ranges_dict)
+        break
+
+    connection.close()
+
+    if result:
+        answer_props = {prop_id: result['prediction'][prop_id]['value'] for prop_id in result['prediction']}
+        answer_props['t'] /= 100000 # normalization 10**5
+
+        if 'disordered' in result['structure'].info:
+            result['structure'], error = order_disordered(result['structure'])
+            if error: return fmt_msg(error)
+            result['structure'].center(about=0.0)
+
+        formula = get_formula(result['structure'])
+
+        result_quality, aux_info = 0, []
+        for k, v in answer_props.items():
+            aux_info.append([
+                prop_models[k]['name'].replace(' ', '_'),
+                sample[k + '_min'],
+                v,
+                sample[k + '_max'],
+                prop_models[k]['units']
+            ])
+            tol = (sample[k + '_max'] - sample[k + '_min']) * TOL_QUALITY
+            if sample[k + '_min'] - tol < v < sample[k + '_max'] + tol:
+                result_quality += 1
+
+        return Response(
+            json.dumps({
+                'vis_cif': ase_to_eq_cif(
+                    result['structure'],
+                    supply_sg=False,
+                    mpds_labs_loop=[result_quality] + aux_info
+                ),
+                'props': answer_props,
+                'formula': html_formula(formula),
+                'title': formula
+                }, indent=4, escape_forward_slashes=False
+            ),
+            content_type='application/json'
+        )
+    return fmt_msg(error)
 
 
 if __name__ == '__main__':
