@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" type="text/css" href="common.css" />
+<meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+<title>Materials Design | MPDS</title>
+<style type="text/css">
+/* Common styles */
+
+html, body{background:#f6f6f6;color:#444;-webkit-text-size-adjust:100%;text-size-adjust:100%;}
+.left{float:left;}
+.right{float:right;}
+div.cross{float:right;width:16px;height:16px;font-size:10px;text-align:center;cursor:pointer;background:url(data:image/gif;base64,R0lGODlhEAAQAJEAAAAAAP///1VVVf///yH5BAEAAAMALAAAAAAQABAAAAIjnI+py6L+BDRy0gqxHVqvLjGcJ3Yl+IEhQpLX+m7wMYv2PRQAOw==) no-repeat;}
+
+/* Layout styles */
+
+#panel{position:fixed;z-index:300;width:30vw;height:auto;top:20px;left:50vw;margin-left:-15vw;background:#fbfbfb;padding:0.5vw;border:1px solid #EAEAEA;box-shadow:0px 1px 1px 0px rgba(0,0,0,0.2);}
+#panel strong{display:block;margin:5px 0;font-size:1.5vw;font-weight:normal;width:100%;text-align:center;}
+#panel ul li{list-style:none;display:block;margin:28px 0;}
+#panel ul li#slider_holder_0{display:none;font-size:1vw;line-height:2.5vw;text-align:center;}
+div.title{width:100%;clear:both;text-align:center;font-size:1vw;line-height:2.5em;}
+div.snap{width:18%;text-align:center;font-size:0.85vw;}
+div.slider{width:64%;float:left;}
+#demo_trigger{width:140px;margin:60px auto 5px;cursor:pointer;font-size:1.2em;font-weight:normal;text-align:center;border:1px solid #3e3f95;background:#3e3f95;color:#fff;line-height:1.4em;border-radius:2px;text-decoration:none;box-shadow:inset 0 2px 2px rgba(255,255,255,0.3), inset 0 -2px 2px rgba(0,0,0,0.3), inset 0 20px 10px rgba(255,255,255,0.3), 0 0 2px 1px rgba(0,0,0,0.2), 0 2px 2px rgba(0,0,0,0.3);}
+
+#results{display:none;position:absolute;z-index:200;width:30vw;height:auto;top:20px;left:50vw;margin-left:-15vw;margin-bottom:5vw;background:#fff;padding:0.5vw;border:1px solid #EAEAEA;box-shadow:0px 1px 1px 0px rgba(0,0,0,0.2);}
+#results ul li{list-style:none;display:block;width:100%;line-height:2em;border-top:1px solid #000;}
+#results ul li div{text-align:center;font-style:italic;}
+#results ul li strong{font-weight:bold;cursor:pointer;border-bottom:1px solid #000;}
+#results ul li span{display:inline-block;float:right;font-style:italic;font-weight:bold;cursor:pointer;line-height:1.6em;border-bottom:1px solid #000;}
+
+#info{display:none;position:fixed;z-index:100;width:30vw;height:98%;top:20px;left:50vw;margin-left:-15vw;background:#fff;padding:0.5vw;border:1px solid #EAEAEA;box-shadow:0px 1px 1px 0px rgba(0,0,0,0.2);}
+#info strong{line-height:2.4em;}
+#info strong a, #info strong span{cursor:pointer;text-decoration:none;color:#c00;border-bottom:1px solid #c00;}
+#info_table{width:100%;margin:0 0 10px;}
+#info_table ul li{list-style:none;display:block;width:100%;line-height:2em;border-top:1px solid #000;letter-spacing:-0.5px;}
+#info_table ul li span{display:inline-block;float:right;}
+#info_table ul li strong{color:#c00;font-style:italic;}
+
+/* Position styles */
+
+._3_2{animation:_3_2 0.5s ease-out 0s 1 normal forwards;}
+._3_4{animation:_3_4 0.5s ease-out 0s 1 normal forwards;}
+._4_3{animation:_4_3 0.5s ease-out 0s 1 normal forwards;}
+
+._2_1{animation:_2_1 0.5s ease-out 0s 1 normal forwards;}
+._1_2{animation:_1_2 0.5s ease-out 0s 1 normal forwards;}
+._4_5{animation:_4_5 0.5s ease-out 0s 1 normal forwards;}
+
+@keyframes _3_2 {
+    0% {transform:translate(0vw, 0vw);}
+    100% {transform:translate(-16vw, 0vw);}
+}
+@keyframes _3_4 {
+    0% {transform:translate(0vw, 0vw);}
+    100% {transform:translate(16vw, 0vw);}
+}
+@keyframes _4_3 {
+    0% {transform:translate(16vw, 0vw);}
+    100% {transform:translate(0vw, 0vw);}
+}
+@keyframes _2_1 {
+    0% {transform:translate(-16vw, 0vw);}
+    100% {transform:translate(-32vw, 0vw);}
+}
+@keyframes _1_2 {
+    0% {transform:translate(-32vw, 0vw);}
+    100% {transform:translate(-16vw, 0vw);}
+}
+@keyframes _4_5 {
+    0% {transform:translate(16vw, 0vw);}
+    100% {transform:translate(32vw, 0vw);}
+}
+
+/*! nouislider - 11.1.0 - 2018-04-02 */
+
+.noUi-target,.noUi-target *{-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;-ms-touch-action:none;touch-action:none;-ms-user-select:none;-moz-user-select:none;user-select:none;-moz-box-sizing:border-box;box-sizing:border-box}.noUi-target{position:relative;direction:ltr}.noUi-base,.noUi-connects{width:100%;height:100%;position:relative;z-index:1}.noUi-connects{overflow:hidden;z-index:0}.noUi-connect,.noUi-origin{will-change:transform;position:absolute;z-index:1;top:0;left:0;height:100%;width:100%;-ms-transform-origin:0 0;-webkit-transform-origin:0 0;transform-origin:0 0}html:not([dir=rtl]) .noUi-horizontal .noUi-origin{left:auto;right:0}.noUi-vertical .noUi-origin{width:0}.noUi-horizontal .noUi-origin{height:0}.noUi-handle{position:absolute}.noUi-state-tap .noUi-connect,.noUi-state-tap .noUi-origin{-webkit-transition:transform .3s;transition:transform .3s}.noUi-state-drag *{cursor:inherit!important}.noUi-horizontal{height:18px}.noUi-horizontal .noUi-handle{width:34px;height:28px;left:-17px;top:-6px}.noUi-vertical{width:18px}.noUi-vertical .noUi-handle{width:28px;height:34px;left:-6px;top:-17px}html:not([dir=rtl]) .noUi-horizontal .noUi-handle{right:-17px;left:auto}.noUi-target{background:#FAFAFA;border-radius:4px;border:1px solid #D3D3D3;box-shadow:inset 0 1px 1px #F0F0F0,0 3px 6px -5px #BBB}.noUi-connects{border-radius:3px}.noUi-connect{background:#fc6}.noUi-draggable{cursor:ew-resize}.noUi-vertical .noUi-draggable{cursor:ns-resize}.noUi-handle{border:1px solid #D9D9D9;border-radius:3px;background:#FFF;cursor:default;box-shadow:inset 0 0 1px #FFF,inset 0 1px 7px #EBEBEB,0 3px 6px -3px #BBB}.noUi-active{box-shadow:inset 0 0 1px #FFF,inset 0 1px 7px #DDD,0 3px 6px -3px #BBB}.noUi-handle:after,.noUi-handle:before{content:"";display:block;position:absolute;height:14px;width:1px;background:#E8E7E6;left:14px;top:6px}.noUi-handle:after{left:17px}.noUi-vertical .noUi-handle:after,.noUi-vertical .noUi-handle:before{width:14px;height:1px;left:6px;top:14px}.noUi-vertical .noUi-handle:after{top:17px}[disabled] .noUi-connect{background:#B8B8B8}[disabled] .noUi-handle,[disabled].noUi-handle,[disabled].noUi-target{cursor:not-allowed}.noUi-pips,.noUi-pips *{-moz-box-sizing:border-box;box-sizing:border-box}.noUi-pips{position:absolute;color:#999}.noUi-value{position:absolute;white-space:nowrap;text-align:center}.noUi-value-sub{color:#ccc;font-size:10px}.noUi-marker{position:absolute;background:#CCC}.noUi-marker-large,.noUi-marker-sub{background:#AAA}.noUi-pips-horizontal{padding:10px 0;height:80px;top:100%;left:0;width:100%}.noUi-value-horizontal{-webkit-transform:translate(-50%,50%);transform:translate(-50%,50%)}.noUi-rtl .noUi-value-horizontal{-webkit-transform:translate(50%,50%);transform:translate(50%,50%)}.noUi-marker-horizontal.noUi-marker{margin-left:-1px;width:2px;height:5px}.noUi-marker-horizontal.noUi-marker-sub{height:10px}.noUi-marker-horizontal.noUi-marker-large{height:15px}.noUi-pips-vertical{padding:0 10px;height:100%;top:0;left:100%}.noUi-value-vertical{-webkit-transform:translate(0,-50%);transform:translate(0,-50%,0);padding-left:25px}.noUi-rtl .noUi-value-vertical{-webkit-transform:translate(0,50%);transform:translate(0,50%)}.noUi-marker-vertical.noUi-marker{width:5px;height:2px;margin-top:-1px}.noUi-marker-vertical.noUi-marker-sub{width:10px}.noUi-marker-vertical.noUi-marker-large{width:15px}.noUi-tooltip{display:block;position:absolute;border:1px solid #D9D9D9;border-radius:3px;background:#fff;color:#000;padding:5px;text-align:center;white-space:nowrap}.noUi-horizontal .noUi-tooltip{-webkit-transform:translate(-50%,0);transform:translate(-50%,0);left:50%;bottom:120%}.noUi-vertical .noUi-tooltip{-webkit-transform:translate(0,-50%);transform:translate(0,-50%);top:50%;right:120%}
+
+/* FOOTER */
+
+#footer{position:fixed;bottom:0;left:0;z-index:999;width:100%;height:32px;line-height:32px;text-align:center;font-size:0.85em;color:#666;background:#fff;border-top:1px solid #888;letter-spacing:0.5px;}
+#footer a{text-decoration:none;color:#900;border-bottom:1px solid #900;}
+
+/* Spinner */
+
+#spinner{display:none;position:fixed;left:0;top:0;width:100%;height:100%;text-align:center;z-index:400;overflow:hidden;background-color:rgba(255,255,255,0.4);}
+#logo{position:absolute;float:none;top:50%;left:50%;width:80px;height:80px;margin:-40px 0 0 -40px;background-size:100%;-webkit-animation:spin 2s ease infinite;-moz-animation:spin 2s ease infinite;animation:spin 2s ease infinite;}
+@-moz-keyframes spin { 100% { -moz-transform:rotate(360deg); } }
+@-webkit-keyframes spin { 100% { -webkit-transform:rotate(360deg); } }
+@keyframes spin { 100% { transform:rotate(360deg); } }
+
+/* Smartphones */
+
+@media (max-width:900px){
+#nav{display:none;}
+#panel{position:static;width:90vw;margin:-40px auto 0;}
+#results{position:static;width:90vw;margin:10px auto 0;}
+#info{width:94vw;margin-left:-47vw;top:5px;}
+#panel *, #results *, #info *{font-size:2.5vmin;}
+._3_2, ._3_4, ._4_3, ._2_1, ._1_2, ._4_5{animation: none !important;}
+}
+</style>
+<script type="text/javascript" src="nouislider.min.js"></script>
+</head>
+<body>
+
+<!-- COMMON NAVBAR START -->
+<div id="nav"><ol>
+    <li><a href="props.html">Properties</a></li>
+    <li><a href="design.html" class="present">Structure</a></li>
+</ol></div>
+<!-- COMMON NAVBAR END -->
+
+<div id="panel">
+    <strong>Select ranges:</strong>
+    <ul id="sliders"></ul>
+    <div id="demo_trigger">Search</div>
+</div>
+
+<div id="results"></div>
+
+<div id="info">
+    <div class="cross" id="info_close"></div>
+    <strong id="info_caption"></strong>
+    <div id="info_table"></div>
+    <div id="playerbox"></div>
+</div>
+
+<div id="footer">Created by <a href="https://mpds.io" target="_blank">MPDS</a> using <a href="https://wiki.fysik.dtu.dk/ase" target="_blank">ase</a>, <a href="http://wiki.crystallography.net/cod-tools/CIF-parser" target="_blank">pycodcif</a>, <a href="https://atztogo.github.io/spglib" target="_blank">spglib</a>, <a href="http://tilde-lab.github.io/player.html" target="_blank">cifplayer</a> <i>etc.</i> The code is <a href="https://github.com/mpds-io/mpds-ml-labs" target="_blank">open-source</a>.</div>
+
+<div id="spinner"><div id="logo"></div></div>
+
+<iframe name="downloader" frameborder=0 scrolling="no" width="1" height="1"></iframe>
+
+<script type="text/javascript">
+"use strict";
+
+// A cross-browser wrapper for DOMContentLoaded by Diego Perini, version 1.2
+function contentLoaded(win, fn){
+    var done = false, top = true,
+    doc = win.document,
+    root = doc.documentElement,
+    modern = doc.addEventListener,
+
+    add = modern ? 'addEventListener' : 'attachEvent',
+    rem = modern ? 'removeEventListener' : 'detachEvent',
+    pre = modern ? '' : 'on',
+
+    init = function(e) {
+        if (e.type == 'readystatechange' && doc.readyState != 'complete') return;
+        (e.type == 'load' ? win : doc)[rem](pre + e.type, init, false);
+        if (!done && (done = true)) fn.call(win, e.type || e);
+    },
+
+    poll = function() {
+        try { root.doScroll('left'); } catch(e) { setTimeout(poll, 50); return; }
+        init('poll');
+    };
+
+    if (doc.readyState == 'complete') fn.call(win, 'lazy');
+    else {
+        if (!modern && root.doScroll) {
+            try { top = !win.frameElement; } catch(e) { }
+            if (top) poll();
+        }
+        doc[add](pre + 'DOMContentLoaded', init, false);
+        doc[add](pre + 'readystatechange', init, false);
+        win[add](pre + 'load', init, false);
+    }
+}
+
+// The main content
+window.prop_models = {
+    'z': {
+        'name': 'isothermal bulk modulus',
+        'units': 'GPa',
+        'symbol': 'B<sub>T</sub>',
+        'dx': 1,
+        'range': [5, 265]
+    },
+    'y': {
+        'name': 'enthalpy of formation',
+        'units': 'kJ g-at.<sup>-1</sup>',
+        'symbol': '&Delta;<sub>f</sub>H',
+        'dx': 1,
+        'range': [-325, 0]
+    },
+    'x': {
+        'name': 'heat capacity at constant pressure',
+        'units': 'J K<sup>-1</sup> g-at.<sup>-1</sup>',
+        'symbol': 'C<sub>p</sub>',
+        'dx': 1,
+        'range': [11, 28] // NB internally treated as *10 at the backend
+    },
+    'k': {
+        'name': 'Seebeck coefficient',
+        'units': 'muV K<sup>-1</sup>',
+        'symbol': 'S',
+        'dx': 1,
+        'range': [-150, 225]
+    },
+    'w': {
+        'name': 'energy gap',
+        'units': 'eV',
+        'symbol': 'E<sub>g</sub>',
+        'dx': 0.5,
+        'range': [0.5, 10] // NB internally treated as *10 at the backend
+    },
+    'm': {
+        'name': 'temperature for congruent melting',
+        'units': 'K',
+        'symbol': 'T<sub>fus</sub>',
+        'dx': 1,
+        'range': [300, 2700]
+    },
+    'd': {
+        'name': 'Debye temperature',
+        'units': 'K',
+        'symbol': '&Theta;<sub>D</sub>',
+        'dx': 1,
+        'range': [175, 1100]
+    },
+    't': {
+        'name': 'linear thermal expansion coefficient',
+        'units': 'K<sup>-1</sup> 10<sup>-5</sup>',
+        'symbol': '&alpha;',
+        'dx': 0.5,
+        'range': [-0.5, 10] // NB internally treated as *10 at the backend
+    }
+};
+
+window.mpds_host = 'https://mpds.io';
+window.srv_host = (window.location.hostname=='localhost' || window.location.hostname=='127.0.0.1' || window.location.hostname=='') ? 'http://127.0.0.1:5000' : 'https://labs.mpds.io';
+window.api_host = 'https://api.mpds.io/v0';
+
+window.srch_endpoint = window.api_host + '/search/facet';
+window.info_endpoint = window.api_host + '/search/design_info';
+
+window.design_endpoint = window.srv_host + '/design';
+window.cif_endpoint = window.srv_host + '/download_cif';
+
+window.player_src = 'player.html';
+window.playerdata = null;
+window.buffer = {};
+
+window.disabled_w = false;
+window.xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');;
+
+function get_rand(min, max){
+    return Math.random() * (max - min) + min;
+}
+
+function get_randint(min, max){
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function get_bdice(){
+    return Math.round(Math.random()) === 0;
+}
+
+function iframe_post(url, iframe_target, vars_content){
+    var poster = document.createElement('form');
+    poster.action = url;
+    poster.method = 'post';
+    poster.target = iframe_target;
+
+    for (var name in vars_content){
+        var post_content = document.createElement('input');
+        post_content.type = 'hidden';
+        post_content.name = name;
+        post_content.value = vars_content[name];
+        poster.appendChild(post_content);
+    }
+
+    document.body.appendChild(poster);
+    poster.submit();
+}
+
+function request_search(){
+    var numeric_search = [];
+
+    for (var prop_id in window.prop_models){
+        var data = document.getElementById('slider_' + prop_id).noUiSlider.get(),
+            name = window.prop_models[prop_id]['name'];
+
+        if (prop_id == 'w'){
+            name = 'values of electronic band gap';
+            if (window.disabled_w){
+                numeric_search.push([name, '=', 0]);
+                continue;
+            }
+
+        } else if (prop_id == 't'){
+            data[0] /= 100000;
+            data[1] /= 100000;
+        }
+        numeric_search.push([name, '>', data[0]]);
+        numeric_search.push([name, '<', data[1]]);
+    }
+
+    window.xhr.abort();
+    window.xhr.onreadystatechange = function(){
+        if (window.xhr.readyState == 4){
+            document.getElementById('spinner').style.display = 'none';
+            if (window.xhr.status == 200) handle_search(window.xhr.responseText);
+            else if (window.xhr.status) alert('Error: HTTP status ' + window.xhr.status + ' received during retrieving data from the server');
+        }
+    }
+    document.getElementById('spinner').style.display = 'block';
+    window.xhr.open('GET', window.srch_endpoint + '?q=' + JSON.stringify({'numeric': numeric_search}));
+    window.xhr.send(1);
+}
+
+function request_design(){
+    var numeric_search = {};
+
+    for (var prop_id in window.prop_models){
+        var data = document.getElementById('slider_' + prop_id).noUiSlider.get();
+
+        if (prop_id == 'x' || prop_id == 't'){
+            data[0] *= 10;
+            data[1] *= 10;
+
+        } else if (prop_id == 'w'){
+            if (window.disabled_w){
+                data[0] = 0;
+                data[1] = 0;
+
+            } else {
+                data[0] *= 10;
+                data[1] *= 10;
+            }
+        }
+        numeric_search[prop_id] = data;
+    }
+
+    window.xhr.abort();
+    window.xhr.onreadystatechange = function(){
+        if (window.xhr.readyState == 4){
+            document.getElementById('spinner').style.display = 'none';
+            if (window.xhr.status == 200 || window.xhr.status == 400) handle_info(window.xhr.responseText);
+            else if (window.xhr.status) alert('Error: HTTP status ' + window.xhr.status + ' received during retrieving data from the server');
+        }
+    }
+    document.getElementById('spinner').style.display = 'block';
+    window.xhr.open('POST', window.design_endpoint, true);
+    window.xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+    window.xhr.send('numerics=' + JSON.stringify(numeric_search));
+}
+
+function handle_search(payload){
+    payload = JSON.parse(payload).out;
+
+    var panel = document.getElementById('panel'),
+        results = document.getElementById('results'),
+        output = '<ul>';
+
+    if (payload.length){
+        payload.forEach(function(item){
+            output += '<li>' + item[1] + ' (SG' + item[2] + ') <span class="info_trigger" rel="' + item[0] + '">Show</span></li>';
+        });
+        if (payload.length == 450)
+            output += '<li><div>Other results not shown</div></li>';
+        else if (payload.length < 7)
+            output += '<li><div>Try to <strong class="design_trigger">design a new material</strong>.</div></li>';
+
+    } else output += '<li><div>No results known. Try to <strong class="design_trigger">design a new material</strong>.</div></li>';
+
+    output += '</ul>';
+    results.innerHTML = output;
+    results.style.display = 'block';
+
+    if (!panel.classList.contains('_3_2')) panel.classList.add('_3_2');
+    if (!results.classList.contains('_3_4')) results.classList.add('_3_4');
+}
+
+function handle_info(payload, phid){
+    payload = JSON.parse(payload);
+    if (payload.error){
+        alert(payload.error);
+        return;
+    }
+
+    if (phid)
+        document.getElementById('info_caption').innerHTML = 'MPDS Distinct Phase #' + phid + ' (<a target="_blank" href="' + window.mpds_host + '/#phase_id/' + phid + '">more info</a>)';
+
+    else if (payload.formula){
+        document.getElementById('info_caption').innerHTML = payload.formula + ' dynamically designed (<span id="download_cif">download</span>)';
+        window.buffer.title = payload.title;
+        var triggers = document.getElementsByClassName('design_trigger');
+        for (var i = 0; i < triggers.length; i++){
+            triggers[i].innerHTML = 'design another material';
+        }
+    }
+
+    var output = '<ul>';
+    for (var prop_id in window.prop_models){
+        if (prop_id == 't') payload.props[prop_id] = payload.props[prop_id] * 100000;
+
+        var asterisk_info = '',
+            data = document.getElementById('slider_' + prop_id).noUiSlider.get();
+        if (phid && (payload.props[prop_id] < data[0] || payload.props[prop_id] > data[1]))
+            asterisk_info = ', <strong>median value</strong>'
+        if (payload.formula && prop_id == 'w' && ((window.disabled_w && payload.props['w']) || (!window.disabled_w && !payload.props['w'])))
+            asterisk_info = ', <strong>conflicting</strong>'; // + TODO out of bounds
+        if (payload.formula && prop_id != 'w' && (payload.props[prop_id] < data[0] || payload.props[prop_id] > data[1]))
+            asterisk_info = ', <strong>out of bounds</strong>';
+
+        if (prop_id == 't') payload.props[prop_id] = payload.props[prop_id].toPrecision(2);
+
+        output += '<li>' + window.prop_models[prop_id]['name'] + ', ' + window.prop_models[prop_id]['units'] + asterisk_info + ' <span>' + (payload.props[prop_id] || '&mdash;') + '</span></li>';
+    }
+    output += '</ul>';
+    document.getElementById('info_table').innerHTML = output;
+
+    window.playerdata = payload.vis_cif;
+    document.getElementById('playerbox').innerHTML = '<iframe frameborder=0 scrolling="no" width="100%" height="600" src="' + window.player_src + '"></iframe>';
+
+    var panel = document.getElementById('panel'),
+        results = document.getElementById('results'),
+        info = document.getElementById('info');
+
+    info.style.display = 'block';
+
+    panel.className = '';
+    panel.classList.add('_2_1');
+    results.className = '';
+    results.classList.add('_4_3');
+    if (!info.classList.contains('_4_5')) info.classList.add('_4_5');
+}
+
+contentLoaded(window, function(){
+
+    var slider_html = '';
+    for (var prop_id in window.prop_models){
+        var addendum = (prop_id == 'w') ? '<li id="slider_holder_0"><input id="trigger_0" type="checkbox" checked="checked" /><label for="trigger_0"> conductor, no energy gap</label></li>' : '';
+
+        slider_html += '<li id="slider_holder_' + prop_id + '"><div class="title" id="title_' + prop_id + '"></div><div id="snap_lower_' + prop_id + '" class="snap left"></div><div id="slider_' + prop_id + '" rel="' + prop_id + '" class="slider"></div><div id="snap_upper_' + prop_id + '" class="snap right"></div></li>' + addendum;
+    }
+    document.getElementById('sliders').innerHTML = slider_html;
+
+    for (var prop_id in window.prop_models){
+
+        var slider = document.getElementById('slider_' + prop_id),
+            min = window.prop_models[prop_id]['range'][0],
+            max = window.prop_models[prop_id]['range'][1],
+            dice = get_randint(0, 2),
+            addendum = '';
+        if (dice == 0) var r1 = min, r2 = min + 0.33 * (max - min);
+        else if (dice == 1) var r1 = min + 0.33 * (max - min), r2 = min + 0.66 * (max - min);
+        else var r1 = min + 0.66 * (max - min), r2 = max;
+
+        noUiSlider.create(slider, {
+            start: [Math.min(r1, r2), Math.max(r1, r2)],
+            step: window.prop_models[prop_id]['dx'],
+            connect: true,
+            behaviour: 'drag',
+            range: {'min': min, 'max': max}
+        });
+
+        if (prop_id == 'w') addendum = '<input id="trigger_w" type="checkbox" checked="checked" /><label for="trigger_w"> insulator</label>, ';
+        document.getElementById('title_' + prop_id).innerHTML = addendum + window.prop_models[prop_id]['name'] + ', ' + window.prop_models[prop_id]['units'];
+
+        // handler #1
+        slider.noUiSlider.on('update', function(values, handle){
+            var p = this.target.getAttribute('rel'),
+                snap_values = [
+                    document.getElementById('snap_lower_' + p),
+                    document.getElementById('snap_upper_' + p)
+                ];
+            snap_values[handle].innerHTML = values[handle];
+        });
+
+        // handler #2
+        slider.noUiSlider.on('set', request_search);
+    }
+
+    // handler #3
+    document.getElementById('trigger_w').onclick = function(){
+        document.getElementById('slider_holder_w').style.display = 'none';
+        document.getElementById('slider_holder_0').style.display = 'block';
+        window.disabled_w = true;
+        request_search();
+        return false;
+    }
+    document.getElementById('trigger_0').onclick = function(){
+        document.getElementById('slider_holder_0').style.display = 'none';
+        document.getElementById('slider_holder_w').style.display = 'block';
+        window.disabled_w = false;
+        request_search();
+        return false;
+    }
+
+    // handler #4
+    document.querySelector('#results').addEventListener('click', function(event){
+        if (event.target.classList.contains('info_trigger')){
+
+            event.target.parentNode.style.color = '#c00';
+            var phid = event.target.getAttribute('rel');
+
+            window.xhr.abort();
+            window.xhr.onreadystatechange = function(){
+                if (window.xhr.readyState == 4){
+                    if (window.xhr.status == 200) handle_info(window.xhr.responseText, phid);
+                    else if (window.xhr.status) alert('Error: HTTP status ' + window.xhr.status + ' received during retrieving data from the server');
+                }
+            }
+            window.xhr.open('GET', window.info_endpoint + '?phid=' + phid);
+            window.xhr.send(1);
+        }
+
+        else if (event.target.classList.contains('design_trigger')){
+            request_design();
+        }
+    })
+
+    // handler #5
+    document.getElementById('info_caption').onclick = function(event){
+        if (event.target.id == 'download_cif'){
+            iframe_post(window.cif_endpoint, 'downloader', {
+                structure: window.playerdata,
+                title: window.buffer.title
+            });
+            return false;
+        }
+    }
+
+    // handler #6
+    document.getElementById('info_close').onclick = function(){
+        var panel = document.getElementById('panel'),
+            results = document.getElementById('results'),
+            info = document.getElementById('info');
+        panel.className = '';
+        panel.classList.add('_1_2');
+        results.className = '';
+        results.classList.add('_3_4');
+        info.style.display = 'none';
+        info.className = '';
+    }
+
+    // handler #7
+    document.getElementById('demo_trigger').onclick = request_search;
+});
+</script>
+</body>
+</html>
