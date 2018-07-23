@@ -4,7 +4,8 @@ ml_models =
     /path_to_models/model_one.pkl
     /path_to_models/model_two.pkl
 api_key =
-api_endpoint =
+api_endpoint = https://api.mpds.io/v0/download/facet
+els_endpoint = https://api.mpds.io/v0/download/els_comb
 
 [db]
 user = postgres
