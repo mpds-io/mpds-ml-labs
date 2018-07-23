@@ -14,6 +14,7 @@ if os.path.exists(config_path):
     ML_MODELS = config.get('mpds_ml_labs', 'ml_models') or ''
     API_KEY = config.get('mpds_ml_labs', 'api_key')
     API_ENDPOINT = config.get('mpds_ml_labs', 'api_endpoint')
+    ELS_ENDPOINT = config.get('mpds_ml_labs', 'els_endpoint')
 
     ML_MODELS = [
         path.strip() for path in filter(None, ML_MODELS.split())
@@ -26,6 +27,7 @@ else:
     ML_MODELS = []
     API_KEY = None
     API_ENDPOINT = None
+    ELS_ENDPOINT = None
 
     KNN_TABLE = None
 
