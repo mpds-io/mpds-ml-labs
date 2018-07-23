@@ -6,6 +6,7 @@ pycodcif == 0.8.9
 spglib == 1.9.9
 pandas
 sklearn
+imblearn
 mpds_client
 progressbar
 pg8000
