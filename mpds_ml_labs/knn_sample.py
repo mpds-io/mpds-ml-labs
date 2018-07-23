@@ -1,10 +1,22 @@
 
 import random
+from copy import deepcopy
+
 from common import KNN_TABLE
 from prediction import periodic_elements, periodic_numbers
 
 
-def knn_sample(db_handle, prop_ranges_dict):
+N_SAMPLES = 10 # the more samples, the more probability to succeed,
+               # but the more time-consuming the scoring
+
+def knn_sample(db_handle, user_ranges_dict):
+
+    prop_ranges_dict = deepcopy(user_ranges_dict)
+
+    for prop_id in ['x', 'w', 't']:
+        # NB. internally treated as *10 to fit SMALLINT
+        prop_ranges_dict[prop_id + '_min'] *= 10
+        prop_ranges_dict[prop_id + '_max'] *= 10
 
     query = """
     WITH precise AS (
@@ -34,6 +46,7 @@ def knn_sample(db_handle, prop_ranges_dict):
     )
     #print query
     db_handle.execute(query)
+
     result = []
     for deck in db_handle.fetchall():
         els = [periodic_elements[periodic_numbers.index(int(pn))] for pn in deck[0].split(',') if int(pn) != 0]
@@ -42,6 +55,6 @@ def knn_sample(db_handle, prop_ranges_dict):
     #print "KNN LENGTH: %s" % len(result)
 
     random.shuffle(result)
-    result = result[:7]
+    result = result[:N_SAMPLES]
 
     return result
