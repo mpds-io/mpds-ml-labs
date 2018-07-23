@@ -46,7 +46,7 @@ def poscar_to_ase(poscar_string):
     try:
         ase_obj = read_vasp(buff)
     except AttributeError:
-        error = 'Types of atoms cannot be neither found nor inferred'
+        error = 'Types of atoms can be neither found nor inferred'
     except Exception:
         error = 'Cannot process POSCAR: invalid or missing data'
     buff.close()
