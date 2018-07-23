@@ -50,7 +50,7 @@ def mpds_get_data(api_client, prop_id, descriptor_kappa):
         props.drop(to_drop.index, inplace=True)
 
     if prop_id == 't':
-        props['Value'] *= 100000 # normalization 10**5
+        props['Value'] *= 100000 # scaling 10**5
 
     phases_compounds = dict(zip(props['Phase'], props['Compound'])) # keep the mapping for future
     avgprops = props.groupby('Phase')['Value'].mean().to_frame().reset_index().rename(columns={'Value': 'Avgvalue'})
