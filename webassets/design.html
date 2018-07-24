@@ -232,7 +232,7 @@ window.prop_models = {
 };
 
 window.mpds_host = 'https://mpds.io';
-window.srv_host = (window.location.hostname=='localhost' || window.location.hostname=='127.0.0.1' || window.location.hostname=='') ? 'http://127.0.0.1:5000' : 'https://labs.mpds.io';
+window.srv_host = (window.location.hostname=='localhost' || window.location.hostname=='127.0.0.1' || window.location.hostname=='') ? 'http://127.0.0.1:' + window.location.port : 'https://labs.mpds.io';
 window.api_host = 'https://api.mpds.io/v0';
 
 window.srch_endpoint = window.api_host + '/search/facet';
@@ -319,20 +319,8 @@ function request_design(){
     for (var prop_id in window.prop_models){
         var data = document.getElementById('slider_' + prop_id).noUiSlider.get();
 
-        if (prop_id == 'x' || prop_id == 't'){
-            data[0] *= 10;
-            data[1] *= 10;
+        if (prop_id == 'w' && window.disabled_w) data = [0, 0];
 
-        } else if (prop_id == 'w'){
-            if (window.disabled_w){
-                data[0] = 0;
-                data[1] = 0;
-
-            } else {
-                data[0] *= 10;
-                data[1] *= 10;
-            }
-        }
         numeric_search[prop_id] = data;
     }
 
