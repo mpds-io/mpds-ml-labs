@@ -218,13 +218,13 @@ def design():
         for k, v in answer_props.items():
             aux_info.append([
                 prop_models[k]['name'].replace(' ', '_'),
-                sample[k + '_min'],
+                user_ranges_dict[k + '_min'],
                 v,
-                sample[k + '_max'],
+                user_ranges_dict[k + '_max'],
                 prop_models[k]['units']
             ])
-            tol = (sample[k + '_max'] - sample[k + '_min']) * TOL_QUALITY
-            if sample[k + '_min'] - tol < v < sample[k + '_max'] + tol:
+            tol = (user_ranges_dict[k + '_max'] - user_ranges_dict[k + '_min']) * TOL_QUALITY
+            if user_ranges_dict[k + '_min'] - tol < v < user_ranges_dict[k + '_max'] + tol:
                 result_quality += 1
 
         return Response(
@@ -263,3 +263,5 @@ if __name__ == '__main__':
 
     # NB an external WSGI-compliant server is a must
     # while exposing to the outer world
+
+else: active_ml_models = load_ml_models(ML_MODELS)
