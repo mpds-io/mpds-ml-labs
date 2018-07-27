@@ -14,6 +14,11 @@ from similar_els import materialize, score
 from prediction_ranges import TOL_QUALITY
 
 
+__author__ = 'Evgeny Blokhin <eb@tilde.pro>'
+__copyright__ = 'Copyright (c) 2018, Evgeny Blokhin, Tilde Materials Informatics'
+__license__ = 'LGPL-2.1+'
+
+
 app_labs = Blueprint('app_labs', __name__)
 static_path = os.path.realpath(os.path.join(os.path.dirname(__file__), '../webassets'))
 active_ml_models = {}

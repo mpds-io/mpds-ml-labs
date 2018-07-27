@@ -14,6 +14,11 @@ from struct_utils import json_to_ase
 from common import API_KEY, ELS_ENDPOINT
 
 
+__author__ = 'Evgeny Blokhin <eb@tilde.pro>'
+__copyright__ = 'Copyright (c) 2018, Evgeny Blokhin, Tilde Materials Informatics'
+__license__ = 'LGPL-2.1+'
+
+
 network = httplib2.Http()
 
 norm = {

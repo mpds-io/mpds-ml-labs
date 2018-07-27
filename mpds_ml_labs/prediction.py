@@ -9,6 +9,11 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error, r2_score, confusion_matrix
 
 
+__author__ = 'Evgeny Blokhin <eb@tilde.pro>'
+__copyright__ = 'Copyright (c) 2018, Evgeny Blokhin, Tilde Materials Informatics'
+__license__ = 'LGPL-2.1+'
+
+
 prop_models = {
     'w': {
         'name': 'energy gap',

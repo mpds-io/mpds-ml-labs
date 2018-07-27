@@ -10,6 +10,11 @@ from ase.spacegroup import crystal
 from ase.geometry import cell_to_cellpar
 
 
+__author__ = 'Evgeny Blokhin <eb@tilde.pro>'
+__copyright__ = 'Copyright (c) 2018, Evgeny Blokhin, Tilde Materials Informatics'
+__license__ = 'LGPL-2.1+'
+
+
 def cif_to_ase(cif_string):
     """
     Naive pycodcif usage

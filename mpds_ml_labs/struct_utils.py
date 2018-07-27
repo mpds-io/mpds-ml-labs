@@ -12,6 +12,11 @@ from ase.spacegroup import crystal
 import spglib
 
 
+__author__ = 'Evgeny Blokhin <eb@tilde.pro>'
+__copyright__ = 'Copyright (c) 2018, Evgeny Blokhin, Tilde Materials Informatics'
+__license__ = 'LGPL-2.1+'
+
+
 def detect_format(string):
     """
     Detect CIF or POSCAR
