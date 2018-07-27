@@ -1,6 +1,10 @@
 
 import os
 from ConfigParser import ConfigParser
+from urllib import urlencode
+
+import ujson as json
+import pg8000
 
 
 DATA_PATH = os.path.realpath(os.path.join(os.path.dirname(__file__), '../data'))
@@ -33,7 +37,6 @@ else:
 
 
 def connect_database():
-    import pg8000
 
     assert KNN_TABLE
 
@@ -47,3 +50,17 @@ def connect_database():
     cursor = connection.cursor()
 
     return cursor, connection
+
+
+def make_request(req, address, data={}, httpverb='POST', headers={}):
+
+    address += '?' + urlencode(data)
+
+    if httpverb == 'GET':
+        response, content = req.request(address, httpverb, headers=headers)
+
+    else:
+        headers.update({'Content-type': 'application/x-www-form-urlencoded'})
+        response, content = req.request(address, httpverb, headers=headers, body=urlencode(data))
+
+    return json.loads(content)

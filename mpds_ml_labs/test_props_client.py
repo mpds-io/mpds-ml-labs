@@ -1,36 +1,24 @@
 
 import sys
 import time
-from urllib import urlencode
 
 import httplib2
-import ujson as json
 import numpy as np
-
 from mpds_client import MPDSDataRetrieval, APIError
 
 from prediction import prop_models
 from struct_utils import detect_format, poscar_to_ase, refine, get_formula, sgn_to_crsystem
 from cif_utils import cif_to_ase
-from common import API_KEY, API_ENDPOINT
+from common import API_KEY, API_ENDPOINT, make_request
 
 
-req = httplib2.Http()
+remote = httplib2.Http()
 client = MPDSDataRetrieval(api_key=API_KEY, endpoint=API_ENDPOINT)
+
+LABS_SERVER_ADDR = 'http://127.0.0.1:5000/predict'
+
 ARITY = {1: 'unary', 2: 'binary', 3: 'ternary', 4: 'quaternary', 5: 'quinary'}
 
-def make_request(address, data={}, httpverb='POST', headers={}):
-
-    address += '?' + urlencode(data)
-
-    if httpverb == 'GET':
-        response, content = req.request(address, httpverb, headers=headers)
-
-    else:
-        headers.update({'Content-type': 'application/x-www-form-urlencoded'})
-        response, content = req.request(address, httpverb, headers=headers, body=urlencode(data))
-
-    return json.loads(content)
 
 if __name__ == '__main__':
 
@@ -75,7 +63,7 @@ if __name__ == '__main__':
             'lattices': sgn_to_crsystem(ase_obj.info['spacegroup'].no)
         }
 
-    answer = make_request('http://127.0.0.1:5000/predict', {'structure': structure})
+    answer = make_request(remote, LABS_SERVER_ADDR, {'structure': structure})
     if 'error' in answer:
         raise RuntimeError(answer['error'])
 
@@ -85,10 +73,9 @@ if __name__ == '__main__':
             resp = client.get_dataframe(tpl_query)
         except APIError as e:
             prop_models[prop_id]['factual'] = None
-            if e.code == 1:
-                continue
-            else:
-                raise
+            if e.code != 1:
+                print("While checking against the MPDS an error %s occured" % e.code)
+            continue
 
         resp['Value'] = resp['Value'].astype('float64') # to treat values out of bounds given as str
         resp = resp[resp['Units'] == pdata['units']]
