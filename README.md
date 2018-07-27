@@ -43,22 +43,28 @@ pip install -r requirements.txt
 Currently only *Python 2* is supported (*Python 3* support is almost there).
 
 
-Preparation
+Preparation for work
 ------
 
-The model is trained on the MPDS data using the MPDS API and the scripts `train_regressor.py` and `train_classifier.py`. Some subset of the full MPDS data is opened and possible to obtain via MPDS API [for free](https://mpds.io/open-data-api).
+The model is trained on the MPDS data using the MPDS API and the scripts `train_regressor.py` and `train_classifier.py`. Some subset of the full MPDS data is opened and possible to obtain via MPDS API [for free](https://mpds.io/open-data-api). If the training is performed on the limited (_e.g._ opened) data subset, the scripts must be modified to make queries accordingly. The MPDS API returns an HTTP error code `402` if a user's request is authenticated, but not authorized. See a [full list of HTTP status codes](https://en.wikipedia.org/wiki/List_of_HTTP_status_codes).
+
+The code tries to use the settings exemplified in a template:
+
+```shell
+cp data/settings.ini.sample data/settings.ini
+```
 
 
 Architecture and usage
 ------
 
-Can be used either as a standalone command-line application or as a client-server application. In the latter case, the client and the server communicate over HTTP, and any client able to execute HTTP requests is supported, be it a `curl` command-line client or rich web-browser user interface. For example, the simple HTML5 apps `props.html` and `design.html` are supplied in the `webassets` folder. Server part is a Flask app:
+The code can be used either as a *standalone command-line* application or as a *client-server* application.
 
-```python
-python mpds_ml_labs/app.py
-```
+Examples of the *standalone command-line* architecture are the scripts `mpds_ml_labs/test_props_cmd.py` and `mpds_ml_labs/test_design_cmd.py`.
 
-Web-browser user interface is then available under `http://localhost:5000`. By default, to serve the requests the development Flask server is used. Therefore an _AS-IS_ deployment in an online environment without the suitable WSGI container is **highly discouraged**. For the production environments under the high load it is recommended to use something like [TensorFlow Serving](https://www.tensorflow.org/serving).
+In the case of the *client-server* architecture, the client and the server communicate over HTTP using a simple API, and any client able to execute HTTP requests is supported, be it a `curl` command-line client, a Python script or the rich web-browser user interface. Examples of the Python scripts are `mpds_ml_labs/test_props_client.py` and `mpds_ml_labs/test_design_client.py`.
+
+Server part is a Flask app `mpds_ml_labs/app.py`. The simple HTML5 client apps `props.html` and `design.html`, supplied in the `webassets` folder, are served by a Flask app under `http://localhost:5000`. By default, to serve the requests the development Flask server is used. Therefore an _AS-IS_ deployment in an online environment without the suitable WSGI container is **highly discouraged**. For the production environments under the high load it is recommended to use something like [TensorFlow Serving](https://www.tensorflow.org/serving).
 
 
 Used descriptor and model details
@@ -68,24 +74,54 @@ The term _descriptor_ stands for the compact information-rich representation, al
 
 As a machine-learning model an ensemble of decision trees ([random forest regressor](http://scikit-learn.org/stable/modules/ensemble.html)) is used, as implemented in [scikit-learn](http://scikit-learn.org) Python machine-learning toolkit. The whole MPDS dataset can be used for training. In order to estimate the prediction quality of the _regressor_ model, the _mean absolute error_ and _R2 coefficient of determination_ is saved. In order to estimate the prediction quality of the binary _classifier_ model, the _fraction incorrect_ (_i.e._ the _error percentage_) is saved. The evaluation process is repeated at least 30 times to achieve a statistical reliability.
 
-For generating the crystal structure from the physical properties, see `mpds_ml_labs/test_design.py`.
+Generating the crystal structure from the physical properties is done as follows. The decision-tree properties predictions of nearly 115k distinct MPDS phases are used for the radius-based neighbor learning. This allows to extrapolate the possible chemical elements for almost any given combination of physical properties. The results of the neighbor learning are approximately 7.6M rows, stored in a Postgres table `ml_knn`:
+
+```sql
+CREATE TABLE ml_knn (
+    id  INT PRIMARY KEY,
+    z   SMALLINT NOT NULL,
+    y   SMALLINT NOT NULL,
+    x   SMALLINT NOT NULL,
+    k   SMALLINT NOT NULL,
+    w   SMALLINT NOT NULL,
+    m   SMALLINT NOT NULL,
+    d   SMALLINT NOT NULL,
+    t   SMALLINT NOT NULL,
+    els VARCHAR(19)
+);
+CREATE SEQUENCE ml_knn_id_seq START WITH 1 INCREMENT BY 1 NO MINVALUE NO MAXVALUE CACHE 1;
+ALTER SEQUENCE ml_knn_id_seq OWNED BY ml_knn.id;
+ALTER TABLE ONLY ml_knn ALTER COLUMN id SET DEFAULT nextval('ml_knn_id_seq'::regclass);
+CREATE INDEX prop_z ON ml_knn USING btree(z);
+CREATE INDEX prop_y ON ml_knn USING btree(y);
+CREATE INDEX prop_x ON ml_knn USING btree(x);
+CREATE INDEX prop_k ON ml_knn USING btree(k);
+CREATE INDEX prop_w ON ml_knn USING btree(w);
+CREATE INDEX prop_m ON ml_knn USING btree(m);
+CREATE INDEX prop_d ON ml_knn USING btree(d);
+CREATE INDEX prop_t ON ml_knn USING btree(t);
+```
+
+The full contents of this table can be provided by request. The found elements matching the given property ranges are used to compile a crystal structure based on the available MPDS structure prototypes (via the MPDS API). See `mpds_ml_labs/test_design_cmd.py`.
 
 
 API
 ------
 
-At the local server:
+These are examples of using the `curl` command-line client.
+
+For the local server:
 
 ```shell
 curl -XPOST http://localhost:5000/predict -d "structure=data_in_CIF_or_POSCAR"
-curl -XPOST http://localhost:5000/design -d "numerics=ranges_of_values_of_the_8_properties_in_JSON"
+curl -XPOST http://localhost:5000/design -d "numerics=ranges_of_values_of_8_properties_in_JSON"
 ```
 
-At the demonstration MPDS server (may be switched off):
+For the demonstration MPDS server:
 
 ```shell
 curl -XPOST https://labs.mpds.io/predict -d "structure=data_in_CIF_or_POSCAR"
-curl -XPOST https://labs.mpds.io/design -d "numerics=ranges_of_values_of_the_8_properties_in_JSON"
+curl -XPOST https://labs.mpds.io/design -d "numerics=ranges_of_values_of_8_properties_in_JSON"
 ```
 
 
