@@ -24,7 +24,7 @@ This is the proof of concept, how a relatively unsophisticated statistical model
 - Debye temperature
 - Seebeck coefficient
 - linear thermal expansion coefficient
-- band gap (or its absense, _i.e._ whether a crystal is conductor or insulator)
+- band gap (or its absence, _i.e._ whether a crystal is conductor or insulator)
 
 Further, a reverse task of predicting the possible crystalline structure from a set of given properties is solved. The suitable chemical elements are found, and the resulted structure is generated (if possible) based on the available MPDS prototypes.
 
