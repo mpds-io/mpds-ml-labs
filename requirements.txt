@@ -1,12 +1,12 @@
-httplib2
-ujson
-flask
-ase == 3.15
+httplib2==0.11.3
+ujson==1.35
+flask==1.0.2
+ase==3.16.2
 pycodcif == 0.8.9
-spglib == 1.9.9
-pandas
-sklearn
-imblearn
-mpds_client
-progressbar
-pg8000
+spglib==1.10.4.11
+pandas==0.23.4
+sklearn==0.0
+imblearn==0.0
+mpds_client==0.0.17
+progressbar==2.5
+pg8000==1.12.2
