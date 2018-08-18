@@ -9,4 +9,4 @@ sklearn==0.0
 imblearn==0.0
 mpds_client==0.0.17
 progressbar==2.5
-pg8000
+pg8000==1.12.2
