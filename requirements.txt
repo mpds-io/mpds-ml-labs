@@ -5,7 +5,7 @@ ase == 3.15
 pycodcif == 0.8.9
 spglib == 1.9.9
 pandas
-sklearn
+sklearn==0.0
 imblearn
 mpds_client
 progressbar
