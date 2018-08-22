@@ -4,7 +4,7 @@ flask
 ase == 3.15
 pycodcif == 0.8.9
 spglib == 1.9.9
-pandas
+pandas==0.23.4
 sklearn
 imblearn
 mpds_client
