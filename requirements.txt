@@ -9,4 +9,4 @@ sklearn
 imblearn
 mpds_client
 progressbar
-pg8000
+pg8000==1.12.3
