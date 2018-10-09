@@ -263,7 +263,7 @@ def ase_to_prediction(ase_obj, ml_models, prop_ids=False):
 
 def get_prediction(descriptor, ml_models, prop_ids=False):
     """
-    Execute all the regressor models againts a given structure desriptor;
+    Execute all the regressor models against a given structure descriptor;
     the results of the "w" regressor model will depend on
     the output of the "0" binary classifier model
 

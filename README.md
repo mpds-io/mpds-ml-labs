@@ -46,7 +46,7 @@ Currently only *Python 2* is supported (*Python 3* support is almost there).
 Preparation for work
 ------
 
-The model is trained on the MPDS data using the MPDS API and the scripts `train_regressor.py` and `train_classifier.py`. Some subset of the full MPDS data is opened and possible to obtain via MPDS API [for free](https://mpds.io/open-data-api). If the training is performed on the limited (_e.g._ opened) data subset, the scripts must be modified to make queries accordingly. The MPDS API returns an HTTP error code `402` if a user's request is authenticated, but not authorized. See a [full list of HTTP status codes](https://en.wikipedia.org/wiki/List_of_HTTP_status_codes).
+The model is trained on the MPDS data using the MPDS API and the scripts `train_regressor.py` and `train_classifier.py`. Some subset of the full MPDS data is opened and possible to obtain using API for free (just login at the MPDS via [GitHub](https://mpds.io/github_oauth.html)). If the training is performed on the limited (_e.g._ opened) data subset, the scripts must be modified to query MPDS accordingly. The MPDS API returns an HTTP error code `402` if a user's request is authenticated, but not authorized. See a [full list of HTTP status codes](https://en.wikipedia.org/wiki/List_of_HTTP_status_codes).
 
 The code tries to use the settings exemplified in a template:
 
@@ -144,7 +144,7 @@ License
 
 - The client and the server code: *LGPL-2.1+*
 - The machine-learning MPDS data generated as presented here: *CC BY 4.0*
-- The [open part](https://mpds.io/open-data-api) of the experimental MPDS data (5%): *CC BY 4.0*
+- The open part of the experimental MPDS data (5%): *CC BY 4.0*
 - The closed part of the experimental MPDS data (95%): *commercial*
 
 
