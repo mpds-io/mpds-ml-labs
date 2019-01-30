@@ -3,7 +3,7 @@ ujson
 flask==1.0.2
 ase == 3.15
 pycodcif == 0.8.9
-spglib == 1.9.9
+spglib==1.12.1.post0
 pandas==0.23.4
 sklearn
 imblearn
