@@ -70,11 +70,27 @@ if __name__ == '__main__':
     for prop_id, pdata in prop_models.items():
         tpl_query.update({'props': pdata['name']})
         try:
-            resp = client.get_dataframe(tpl_query)
+            resp = client.get_dataframe(tpl_query, fields={'P': [
+                'sample.material.chemical_formula',
+                'sample.material.phase_id',
+                'sample.measurement[0].property.scalar',
+                'sample.measurement[0].property.units',
+                'sample.measurement[0].condition[0].units',
+                'sample.measurement[0].condition[0].name',
+                'sample.measurement[0].condition[0].scalar'
+            ]}, columns=['Compound', 'Phase', 'Value', 'Units', 'Cunits', 'Cname', 'Cvalue'])
         except APIError as e:
             prop_models[prop_id]['factual'] = None
-            if e.code != 1:
+            if e.code != 204:
                 print("While checking against the MPDS an error %s occured" % e.code)
+            continue
+        if prop_id not in ['m', 'd']:
+            to_drop = resp[
+                (resp['Cname'] == 'Temperature') & (resp['Cunits'] == 'K') & ((resp['Cvalue'] < 200) | (resp['Cvalue'] > 400))
+            ]
+            resp.drop(to_drop.index, inplace=True)
+        if resp.empty:
+            prop_models[prop_id]['factual'] = None
             continue
 
         resp['Value'] = resp['Value'].astype('float64') # to treat values out of bounds given as str
@@ -82,6 +98,11 @@ if __name__ == '__main__':
         prop_models[prop_id]['factual'] = np.median(resp['Value'])
 
     for prop_id, pdata in answer['prediction'].items():
+        if prop_id == 't':
+            # normalization 10**5
+            pdata['value'] /= 100000
+            pdata['mae'] /= 100000
+
         print("{0:40} = {1:6}, factual {2:8} (MAE = {3:4}), {4}".format(
             prop_models[prop_id]['name'],
             'conductor' if pdata['value'] == 0 and prop_id == 'w' else pdata['value'],
