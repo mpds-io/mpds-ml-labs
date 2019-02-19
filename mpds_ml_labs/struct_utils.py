@@ -125,7 +125,7 @@ def refine(ase_obj, accuracy=1E-03):
     """
     try:
         symmetry = spglib.get_spacegroup(ase_obj, symprec=accuracy)
-        lattice, positions, numbers = spglib.refine_cell(ase_obj, symprec=accuracy)
+        lattice, positions, numbers = spglib.standardize_cell(ase_obj, symprec=accuracy, to_primitive=True, no_idealize=True)
     except:
         return None, 'Error while structure refinement'
 
