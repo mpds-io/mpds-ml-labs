@@ -152,7 +152,7 @@ def refine(ase_obj, accuracy=1E-03):
 
 FORMULA_SEQUENCE = ['Fr','Cs','Rb','K','Na','Li',  'Be','Mg','Ca','Sr','Ba','Ra',  'Sc','Y','La','Ce','Pr','Nd','Pm','Sm','Eu','Gd','Tb','Dy','Ho','Er','Tm','Yb',  'Ac','Th','Pa','U','Np','Pu',  'Ti','Zr','Hf',  'V','Nb','Ta',  'Cr','Mo','W',  'Fe','Ru','Os',  'Co','Rh','Ir',  'Mn','Tc','Re',  'Ni','Pd','Pt',  'Cu','Ag','Au',  'Zn','Cd','Hg',  'B','Al','Ga','In','Tl',  'Pb','Sn','Ge','Si','C',   'N','P','As','Sb','Bi',   'H',   'Po','Te','Se','S','O',  'At','I','Br','Cl','F',  'He','Ne','Ar','Kr','Xe','Rn']
 
-def get_formula(ase_obj, find_gcd=True):
+def get_formula(ase_obj, find_gcd=True, as_dict=False):
     parsed_formula = {}
 
     for label in ase_obj.get_chemical_symbols():
@@ -165,6 +165,8 @@ def get_formula(ase_obj, find_gcd=True):
     if expanded > 1:
         parsed_formula = {el: int(content / float(expanded))
                         for el, content in parsed_formula.items()}
+
+    if as_dict: return parsed_formula
 
     atoms = parsed_formula.keys()
     atoms = [x for x in FORMULA_SEQUENCE if x in atoms] + [x for x in atoms if x not in FORMULA_SEQUENCE]
