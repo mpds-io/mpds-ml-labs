@@ -3,6 +3,7 @@ import math
 import random
 import itertools
 import fractions
+from functools import reduce
 
 try:
     from StringIO import StringIO
@@ -230,7 +231,7 @@ def order_disordered(ase_obj):
 
     min_occ = min(
         sum(
-            [item.values() for item in ase_obj.info['disordered'].values()],
+            [list(item.values()) for item in ase_obj.info['disordered'].values()],
             []
         )
     )
@@ -258,7 +259,7 @@ def order_disordered(ase_obj):
     for index, occs in occ_data.items():
         for n in range(len(order_obj) - 1, -1, -1):
             if order_obj[n].tag == index:
-                distrib_el = occs.next()
+                distrib_el = next(occs)
                 if distrib_el == 'X':
                     del order_obj[n]
                 else:
