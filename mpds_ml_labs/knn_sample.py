@@ -44,7 +44,7 @@ def knn_sample(db_handle, user_ranges_dict):
     """.format(
         table=KNN_TABLE, **prop_ranges_dict
     )
-    #print query
+    #print(query)
     db_handle.execute(query)
 
     result = []
@@ -52,7 +52,7 @@ def knn_sample(db_handle, user_ranges_dict):
         els = [periodic_elements[periodic_numbers.index(int(pn))] for pn in deck[0].split(',') if int(pn) != 0]
         result.append(els)
 
-    #print "KNN LENGTH: %s" % len(result)
+    #print("KNN LENGTH: %s" % len(result))
 
     random.shuffle(result)
     result = result[:N_SAMPLES]

@@ -40,8 +40,6 @@ cd REPO_FOLDER
 pip install -r requirements.txt
 ```
 
-Currently only *Python 2* is supported (*Python 3* support is almost there).
-
 
 Preparation for work
 ------

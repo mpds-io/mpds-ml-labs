@@ -30,7 +30,7 @@ def cif_to_ase(cif_string):
         None *or* error (str)
     """
     with tempfile.NamedTemporaryFile(suffix='.cif') as tmp:
-        tmp.write(cif_string)
+        tmp.write(cif_string.encode('utf-8'))
         tmp.flush()
 
         try:

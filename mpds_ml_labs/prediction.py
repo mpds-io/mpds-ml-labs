@@ -175,7 +175,10 @@ def get_aligned_descriptor(ase_obj, kappa=None):
 
 def load_ml_models(prop_model_files, debug=True):
 
-    import cPickle
+    try:
+        import cPickle
+    except ImportError:
+        import _pickle as cPickle
 
     ml_models = {}
     for file_name in prop_model_files:
@@ -272,7 +275,7 @@ def get_prediction(descriptor, ml_models, prop_ids=False):
         None *or* error (str)
     """
     if not prop_ids:
-        prop_ids = ml_models.keys()
+        prop_ids = list(ml_models.keys())
 
     if type(prop_ids) != list:
         prop_ids = prop_ids.split()

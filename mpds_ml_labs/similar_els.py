@@ -260,18 +260,18 @@ def score(scoring, prop_ranges_dict):
         norm[prop_id]( abs(ideal_predictions[prop_id] - x["prediction"][prop_id]["value"]) ) for prop_id in prop_models
     ]))
 
-    #print "*"*50
+    #print("*"*50)
     #pprint(ideal_predictions)
-    #print "vs."
+    #print("vs.")
     #pprint(scoring)
-    #print "*"*50
+    #print("*"*50)
 
     return scoring[0]
 
 
 if __name__ == "__main__":
 
-    print score([
+    print(score([
         {'prediction':{
             'z': {'value': 400},
             'y': {'value': 16},
@@ -311,9 +311,9 @@ if __name__ == "__main__":
         'm_min': 2000, 'm_max': 3000,
         'd_min': 900, 'd_max': 950,
         't_min': -10, 't_max': -9
-    })
+    }))
 
-    print compact_by_disorder(['Si', 'Cr', 'Mo', 'W', 'O'])
-    print compact_by_disorder(['Li', 'O', 'Mn', 'B', 'Fr', 'Re', 'Tc', 'Ga', 'Ra', 'Al'])
-    print compact_by_disorder(['V', 'Cr', 'Mn', 'Rn'])
-    print compact_by_disorder(['Cl', 'Na', 'Dy'])
+    print(compact_by_disorder(['Si', 'Cr', 'Mo', 'W', 'O']))
+    print(compact_by_disorder(['Li', 'O', 'Mn', 'B', 'Fr', 'Re', 'Tc', 'Ga', 'Ra', 'Al']))
+    print(compact_by_disorder(['V', 'Cr', 'Mn', 'Rn']))
+    print(compact_by_disorder(['Cl', 'Na', 'Dy']))

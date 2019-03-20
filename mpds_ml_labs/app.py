@@ -197,7 +197,7 @@ def design():
 
     els_samples = knn_sample(cursor, user_ranges_dict)
     for els_sample in els_samples:
-        #print "TRYING TO MATERIALIZE", ", ".join(els_sample)
+        #print("TRYING TO MATERIALIZE", ", ".join(els_sample))
 
         scoring, error = materialize(els_sample, active_ml_models)
         if error or not scoring:

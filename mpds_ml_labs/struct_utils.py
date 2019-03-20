@@ -3,7 +3,11 @@ import math
 import random
 import itertools
 import fractions
-import cStringIO
+
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 from ase.atoms import Atom, Atoms
 from ase.io.vasp import read_vasp
@@ -47,7 +51,7 @@ def poscar_to_ase(poscar_string):
         None *or* error (str)
     """
     ase_obj, error = None, None
-    buff = cStringIO.StringIO(poscar_string)
+    buff = StringIO(poscar_string)
     try:
         ase_obj = read_vasp(buff)
     except AttributeError:
