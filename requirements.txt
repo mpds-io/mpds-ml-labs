@@ -7,6 +7,6 @@ spglib == 1.9.9
 pandas==0.23.4
 sklearn
 imblearn
-mpds_client==0.0.18
+mpds_client==0.0.21
 progressbar
 pg8000==1.12.3
