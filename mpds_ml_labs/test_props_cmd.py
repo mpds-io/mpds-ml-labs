@@ -1,8 +1,6 @@
 
 import os, sys
 
-import numpy as np
-
 from struct_utils import detect_format, poscar_to_ase, refine
 from cif_utils import cif_to_ase
 from prediction import ase_to_prediction, load_ml_models, prop_models

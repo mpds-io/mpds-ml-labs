@@ -4,6 +4,7 @@ with the different architecture, since the sklearn models
 are not transferable
 """
 import os
+import sys
 import json
 
 import numpy as np
@@ -27,7 +28,7 @@ results = []
 
 DATA_DIR = '/data'
 
-f = open('ml_export.json', 'r')
+f = open(sys.argv[1], 'r')
 final_values = json.loads(f.read())
 f.close()
 
@@ -83,5 +84,5 @@ for key, value in final_values.items():
         print("Saving %s" % export_file)
         results.append(export_file)
 
-for f in results:
-    print f
+for r in results:
+    print(r)

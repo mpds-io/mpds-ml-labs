@@ -8,6 +8,9 @@ from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error, r2_score, confusion_matrix
 
+try: import treelite.runtime
+except ImportError: print('Compiled models not supported')
+
 
 __author__ = 'Evgeny Blokhin <eb@tilde.pro>'
 __copyright__ = 'Copyright (c) 2018, Evgeny Blokhin, Tilde Materials Informatics'
@@ -268,7 +271,8 @@ def get_prediction(descriptor, ml_models, prop_ids=False):
     """
     Execute all the regressor models against a given structure descriptor;
     the results of the "w" regressor model will depend on
-    the output of the "0" binary classifier model
+    the output of the "0" binary classifier model.
+    Now supports treelite's compiled models transparently.
 
     Returns:
         Prediction (dict) *or* None
@@ -310,10 +314,18 @@ def get_prediction(descriptor, ml_models, prop_ids=False):
         else:
             d_input = descriptor[:]
 
-        try:
-            prediction = ml_models[prop_id].predict([d_input])[0]
-        except Exception as e:
-            return None, str(e)
+        if hasattr(ml_models[prop_id], 'treelite'):
+            batch = treelite.runtime.Batch.from_npy2d(np.array([d_input]))
+            try:
+                prediction = float(ml_models[prop_id].predict(batch))
+            except Exception as e:
+                return None, str(e)
+
+        else:
+            try:
+                prediction = float(ml_models[prop_id].predict([d_input])[0])
+            except Exception as e:
+                return None, str(e)
 
         if prop_id == '0':
             if prediction == 0:
@@ -321,8 +333,14 @@ def get_prediction(descriptor, ml_models, prop_ids=False):
 
         else:
             result[prop_id] = {
-                'value': round(prediction, prop_models[prop_id]['rounding']),
-                'mae': round(ml_models[prop_id].metadata['mae'], prop_models[prop_id]['rounding']),
+                'value': round(
+                    prediction,
+                    prop_models[prop_id]['rounding']
+                ),
+                'mae': round(
+                    ml_models[prop_id].metadata['mae'],
+                    prop_models[prop_id]['rounding']
+                ),
                 'r2': ml_models[prop_id].metadata['r2']
             }
 
