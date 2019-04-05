@@ -320,12 +320,16 @@ def get_prediction(descriptor, ml_models, prop_ids=False):
                 prediction = float(ml_models[prop_id].predict(batch))
             except Exception as e:
                 return None, str(e)
+            if prop_id == '0': # account float votes of compiled trees instead of 0 vs. 1
+                prediction = int(round(prediction))
 
         else:
             try:
                 prediction = float(ml_models[prop_id].predict([d_input])[0])
             except Exception as e:
                 return None, str(e)
+
+        #print("%s model yields %s" % (prop_id, prediction))
 
         if prop_id == '0':
             if prediction == 0:
