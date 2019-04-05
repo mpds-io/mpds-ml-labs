@@ -75,8 +75,8 @@ def json_to_ase(datarow):
     if not datarow or not datarow[-1]:
         return None, "No structure found"
 
-    occs_noneq, cell_abc, sg_n, setting, basis_noneq, els_noneq = \
-        datarow[-6], datarow[-5], int(datarow[-4]), datarow[-3], datarow[-2], datarow[-1]
+    occs_noneq, cell_abc, sg_n, basis_noneq, els_noneq = \
+        datarow[-5], datarow[-4], int(datarow[-3]), datarow[-2], datarow[-1]
 
     occ_data = None
     if any([occ != 1 for occ in occs_noneq]):
@@ -94,7 +94,6 @@ def json_to_ase(datarow):
             occ_data[index] = occs
 
     atom_data = []
-    setting = 2 if setting == '2' else 1
 
     for n, xyz in enumerate(basis_noneq):
         atom_data.append(Atom(els_noneq[n], tuple(xyz), tag=n))
@@ -108,7 +107,6 @@ def json_to_ase(datarow):
             spacegroup=sg_n,
             cellpar=cell_abc,
             primitive_cell=True,
-            setting=setting,
             onduplicates='error',
             info=dict(disordered=occ_data) if occ_data else {}
         ), None

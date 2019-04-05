@@ -235,8 +235,7 @@ def massage_by_similarity(input_els_comb, ref_els, ref_occs, active_ml_models):
                 row['occs_noneq'][n] /= len(ref_occs[new_el]) + 1
                 row['occs_noneq'].append(row['occs_noneq'][n])
 
-        setting = '2' if row['sg_hm'].endswith(" O2") else None
-        ase_obj, error = json_to_ase([row['occs_noneq'], row['cell_abc'], row['sg_n'], setting, row['basis_noneq'], new_els])
+        ase_obj, error = json_to_ase([row['occs_noneq'], row['cell_abc'], row['sg_n'], row['basis_noneq'], new_els])
         if error:
             return None, error
 

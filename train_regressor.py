@@ -64,7 +64,7 @@ def mpds_get_data(api_client, prop_id, descriptor_kappa):
     pbar = ProgressBar()
     for item in pbar(api_client.get_data(
         {"props": "atomic structure"},
-        fields={'S':['phase_id', 'entry', 'occs_noneq', 'cell_abc', 'sg_n', 'setting', 'basis_noneq', 'els_noneq']},
+        fields={'S':['phase_id', 'entry', 'occs_noneq', 'cell_abc', 'sg_n', 'basis_noneq', 'els_noneq']},
         phases=phases
     )):
         ase_obj, error = json_to_ase(item)
