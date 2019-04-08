@@ -2,8 +2,8 @@
 from __future__ import division
 import os, sys
 import time
-from progressbar import ProgressBar
 
+from progressbar import ProgressBar
 import numpy as np
 import pandas as pd
 from mpds_client import MPDSDataRetrieval, MPDSExport
