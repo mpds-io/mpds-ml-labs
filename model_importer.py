@@ -9,7 +9,7 @@ import json
 
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, RandomForestClassifier, GradientBoostingClassifier
 
 from imblearn.over_sampling import RandomOverSampler
 
@@ -17,16 +17,32 @@ from mpds_client import MPDSExport
 from mpds_ml_labs.prediction import estimate_regr_quality, estimate_clfr_quality
 
 
-def get_regr(params={}):
-    return RandomForestRegressor(**params)
+def get_regr(params={}, algo=None):
+    if not algo:
+        algo = 'RandomForestRegressor'
 
-def get_clfr(params={}):
-    return RandomForestClassifier(**params)
+    if algo == 'RandomForestRegressor':
+        return RandomForestRegressor(**params)
+    elif algo == 'GradientBoostingRegressor':
+        return GradientBoostingRegressor(**params)
+    else:
+        raise RuntimeError('Unknown %s' % algo)
+
+def get_clfr(params={}, algo=None):
+    if not algo:
+        algo = 'RandomForestClassifier'
+
+    if algo == 'RandomForestClassifier':
+        return RandomForestClassifier(**params)
+    elif algo == 'GradientBoostingClassifier':
+        return GradientBoostingClassifier(**params)
+    else:
+        raise RuntimeError('Unknown %s' % algo)
 
 
 results = []
 
-DATA_DIR = '/data'
+SRC_DATA_DIR = '/data/dfs'
 
 f = open(sys.argv[1], 'r')
 final_values = json.loads(f.read())
@@ -37,7 +53,7 @@ for key, value in final_values.items():
     print("Importing model-%s" % key)
 
     if key == '0':
-        white_data_file, black_data_file = os.path.join(DATA_DIR, value['white']), os.path.join(DATA_DIR, value['black'])
+        white_data_file, black_data_file = os.path.join(SRC_DATA_DIR, value['white']), os.path.join(SRC_DATA_DIR, value['black'])
         white_df, black_df = pd.read_pickle(white_data_file), pd.read_pickle(black_data_file)
         white_df['Class'] = 0
         black_df['Class'] = 1
@@ -54,10 +70,10 @@ for key, value in final_values.items():
         ros = RandomOverSampler()
         X_resampled, y_resampled = ros.fit_sample(X, y)
 
-        error_percentage = estimate_clfr_quality(get_clfr(value['params']), X_resampled, y_resampled)
+        error_percentage = estimate_clfr_quality(get_clfr(value['params'], value['algo']), X_resampled, y_resampled)
         print("Avg. error percentage: %.3f" % error_percentage)
 
-        algo = get_clfr(value['params'])
+        algo = get_clfr(value['params'], value['algo'])
         algo.fit(X_resampled, y_resampled)
         algo.metadata = {'error_percentage': error_percentage}
 
@@ -66,17 +82,17 @@ for key, value in final_values.items():
         results.append(export_file)
 
     else:
-        data_file = os.path.join(DATA_DIR, value['file'])
+        data_file = os.path.join(SRC_DATA_DIR, value['file'])
         df = pd.read_pickle(data_file)
         X = np.array(df['Descriptor'].tolist())
         n_samples, n_x, n_y = X.shape
         X = X.reshape(n_samples, n_x * n_y)
         y = df['Avgvalue'].tolist()
 
-        avg_mae, avg_r2 = estimate_regr_quality(get_regr(value['params']), X, y)
+        avg_mae, avg_r2 = estimate_regr_quality(get_regr(value['params'], value['algo']), X, y)
         print("Avg. MAE: %.2f; avg. R2 score: %.2f" % (avg_mae, avg_r2))
 
-        algo = get_regr(value['params'])
+        algo = get_regr(value['params'], value['algo'])
         algo.fit(X, y)
         algo.metadata = {'mae': avg_mae, 'r2': round(avg_r2, 2)}
 
