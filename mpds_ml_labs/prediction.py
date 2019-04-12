@@ -73,6 +73,20 @@ prop_models = {
         'symbol': '&alpha;(10<sup>-5</sup>)',
         'rounding': 2,
         'interval': [-0.001, 0.001]
+    },
+    'i': {
+        'name': 'electrical conductivity', # NB also: electron conductivity + electrical resistivity
+        'units': 'Omega-1 m-1',
+        'symbol': 'e<sup>&sigma;</sup>',
+        'rounding': 6,
+        'interval': [-28, 28]
+    },
+    'o': {
+        'name': 'thermal conductivity',
+        'units': 'W m-1 K-1',
+        'symbol': '&lambda;<sub>th</sub>',
+        'rounding': 3,
+        'interval': [0.001, 1000]
     }
 }
 
