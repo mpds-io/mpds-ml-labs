@@ -2,7 +2,7 @@ httplib2==0.11.3
 ujson
 flask==1.0.2
 ase
-pycodcif == 2.3
+pycodcif==2.4
 spglib == 1.9.9
 pandas==0.23.4
 sklearn
