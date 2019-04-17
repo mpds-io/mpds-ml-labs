@@ -19,14 +19,14 @@ def get_regr(params={}):
     return RandomForestRegressor(**params)
 
 param_dist = {
-    "n_estimators": range(25, 501, 25),
-    "max_features": range(10, 101, 2),
-    "max_depth": [None, 10, 25, 50, 75],
-    "min_samples_split": [2, 4, 10],
-    "min_samples_leaf": [1, 3, 5, 7, 14],
-    "bootstrap": [True, False],
+    "n_estimators": list(range(200, 1001, 20)),
+    "max_features": list(range(10, 30)),
+    "max_depth": [None, 25, 37, 50, 75, 100, 125, 150],
+    "min_samples_split": list(range(2, 15)),
+    "min_samples_leaf": list(range(1, 9)),
+    "bootstrap": [False],
     "criterion": ['mae'],
-    "n_jobs": [2]
+    "n_jobs": [-1]
 }
 
 if __name__ == "__main__":
