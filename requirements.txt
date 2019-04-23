@@ -1,4 +1,4 @@
-httplib2==0.11.3
+httplib2==0.12.3
 ujson
 flask==1.0.2
 ase
