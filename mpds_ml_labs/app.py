@@ -1,5 +1,6 @@
 
 import os, sys
+from math import exp
 
 import ujson as json
 
@@ -211,6 +212,7 @@ def design():
     if result:
         answer_props = {prop_id: result['prediction'][prop_id]['value'] for prop_id in result['prediction']}
         answer_props['t'] /= 100000 # normalization 10**5
+        answer_props['i'] = exp(answer_props['i']) # scaling log
 
         if 'disordered' in result['structure'].info:
             result['structure'], error = order_disordered(result['structure'])
