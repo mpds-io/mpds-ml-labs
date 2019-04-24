@@ -32,7 +32,11 @@ active_ml_models = load_ml_models(models)
 
 for fname in structures:
     print(fname + "="*40)
-    structure = open(fname).read()
+    try:
+        structure = open(fname).read()
+    except UnicodeDecodeError as error:
+        print(error)
+        continue
 
     fmt = detect_format(structure)
 

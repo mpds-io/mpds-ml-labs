@@ -27,7 +27,7 @@ def fmt_msg(msg, http_code=400):
     return Response('{"error":"%s"}' % msg, content_type='application/json', status=http_code)
 
 def is_plain_text(test):
-    try: test.decode('ascii')
+    try: test.encode('ascii')
     except: return False
     else: return True
 
