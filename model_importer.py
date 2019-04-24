@@ -14,7 +14,7 @@ from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, R
 from imblearn.over_sampling import RandomOverSampler
 
 from mpds_client import MPDSExport
-from mpds_ml_labs.prediction import estimate_regr_quality, estimate_clfr_quality
+from mpds_ml_labs.prediction import estimate_regr_quality, estimate_clfr_quality, prop_models
 
 
 def get_regr(params={}, algo=None):
@@ -47,6 +47,13 @@ SRC_DATA_DIR = '/data/dfs'
 f = open(sys.argv[1], 'r')
 final_values = json.loads(f.read())
 f.close()
+
+try: # only one specific model
+    prop_models[sys.argv[2]]
+except (KeyError, IndexError):
+    pass
+else:
+    final_values = {k: v for k, v in final_values.items() if k == sys.argv[2]}
 
 for key, value in final_values.items():
     print("*"*100)
