@@ -246,7 +246,7 @@ window.playerdata = null;
 window.buffer = {};
 
 window.disabled_w = false;
-window.xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');;
+window.xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
 
 function get_rand(min, max){
     return Math.random() * (max - min) + min;
@@ -305,7 +305,8 @@ function request_search(){
         if (window.xhr.readyState == 4){
             document.getElementById('spinner').style.display = 'none';
             if (window.xhr.status == 200) handle_search(window.xhr.responseText);
-            else if (window.xhr.status) alert('Error: HTTP status ' + window.xhr.status + ' received during retrieving data from the server');
+            else if (window.xhr.status) alert('Error: HTTP error ' + window.xhr.status + ' received during retrieving data from the server');
+            else alert('Error: no response received');
         }
     }
     document.getElementById('spinner').style.display = 'block';
@@ -329,7 +330,8 @@ function request_design(){
         if (window.xhr.readyState == 4){
             document.getElementById('spinner').style.display = 'none';
             if (window.xhr.status == 200 || window.xhr.status == 400) handle_info(window.xhr.responseText);
-            else if (window.xhr.status) alert('Error: HTTP status ' + window.xhr.status + ' received during retrieving data from the server');
+            else if (window.xhr.status) alert('Error: HTTP error ' + window.xhr.status + ' received during retrieving data from the server');
+            else alert('Error: no response received');
         }
     }
     document.getElementById('spinner').style.display = 'block';
@@ -492,7 +494,8 @@ contentLoaded(window, function(){
             window.xhr.onreadystatechange = function(){
                 if (window.xhr.readyState == 4){
                     if (window.xhr.status == 200) handle_info(window.xhr.responseText, phid);
-                    else if (window.xhr.status) alert('Error: HTTP status ' + window.xhr.status + ' received during retrieving data from the server');
+                    else if (window.xhr.status) alert('Error: HTTP error ' + window.xhr.status + ' received during retrieving data from the server');
+                    else alert('Error: no response received');
                 }
             }
             window.xhr.open('GET', window.info_endpoint + '?phid=' + phid);

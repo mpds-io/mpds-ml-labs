@@ -1,6 +1,7 @@
 
 import sys
 import time
+from math import exp
 
 import httplib2
 import numpy as np
@@ -102,6 +103,10 @@ if __name__ == '__main__':
             # normalization 10**5
             pdata['value'] /= 100000
             pdata['mae'] /= 100000
+        elif prop_id == 'i':
+            # scaling log
+            pdata['value'] = exp(pdata['value'])
+            pdata['mae'] = exp(pdata['mae'])
 
         print("{0:40} = {1:6}, factual {2:8} (MAE = {3:4}), {4}".format(
             prop_models[prop_id]['name'],

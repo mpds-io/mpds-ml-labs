@@ -33,6 +33,10 @@ Installation
 ------
 
 ```shell
+apt-get install swig python3-dev
+```
+
+```shell
 git clone REPO_ADDR
 virtualenv --system-site-packages REPO_FOLDER
 cd REPO_FOLDER
