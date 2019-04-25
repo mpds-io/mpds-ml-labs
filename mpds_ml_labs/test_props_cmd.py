@@ -80,4 +80,4 @@ for fname in structures:
             prop_models[prop_id]['units']
         ))
 
-print("Done in %1.2f sc" % time.time() - start_time)
+print("Done in %1.2f sc" % (time.time() - start_time))

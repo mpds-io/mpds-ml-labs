@@ -109,7 +109,7 @@ periodic_numbers = [0,
 7,   13,    17,    19,   21,  23,   25,    27,   29,   31,   33,   35,   37,   39,   41,  43,   45,    49,   53,   57,   61,   65,   69,   73,   77,   81,   87,   93,   99,  105,  111,  118]
 
 MIN_DESCRIPTOR_LEN = 100
-N_ITER_DISORDER = 4 # the more iterations, the more consistent the ML prediction,
+N_ITER_DISORDER = 6 # the more iterations, the more consistent the ML prediction,
                     # but the more expensive the calculation
 
 
@@ -149,7 +149,7 @@ def get_ordered_descriptor(ase_obj, kappa=None, overreach=False):
     if 'disordered' not in ase_obj.info:
         return None, "Expected disordered structure, got ordered structure"
 
-    from .struct_utils import order_disordered
+    from mpds_ml_labs.struct_utils import order_disordered
 
     descriptor = None
     for _ in range(N_ITER_DISORDER):
@@ -275,7 +275,7 @@ def ase_to_prediction(ase_obj, ml_models, prop_ids=False):
     """
     if 'disordered' in ase_obj.info:
 
-        from struct_utils import order_disordered
+        from mpds_ml_labs.struct_utils import order_disordered
 
         results, avg_results = {}, {}
         for _ in range(N_ITER_DISORDER):
