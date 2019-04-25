@@ -228,7 +228,7 @@ def design():
                 user_ranges_dict[k + '_min'],
                 v,
                 user_ranges_dict[k + '_max'],
-                prop_models[k]['units']
+                prop_models[k]['gui_units']
             ])
             tol = (user_ranges_dict[k + '_max'] - user_ranges_dict[k + '_min']) * TOL_QUALITY
             if user_ranges_dict[k + '_min'] - tol < v < user_ranges_dict[k + '_max'] + tol:

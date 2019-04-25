@@ -21,6 +21,7 @@ prop_models = {
     'w': {
         'name': 'energy gap',
         'units': 'eV',
+        'gui_units': 'eV',
         'symbol': 'E<sub>g</sub>',
         'rounding': 1,
         'interval': [0.01, 20]
@@ -28,20 +29,23 @@ prop_models = {
     'z': {
         'name': 'isothermal bulk modulus',
         'units': 'GPa',
+        'gui_units': 'GPa',
         'symbol': 'B<sub>T</sub>',
         'rounding': 0,
         'interval': [0.5, 2000]
     },
     'y': {
         'name': 'enthalpy of formation',
-        'units': 'kJ g-at.-1',
+        'units': 'kJ mol-1',
+        'gui_units': 'kJ mol<sup>-1</sup>',
         'symbol': '&Delta;<sub>f</sub>H',
         'rounding': 0,
         'interval': [-900, 200]
     },
     'x': {
         'name': 'heat capacity at constant pressure',
-        'units': 'J K-1 g-at.-1',
+        'units': 'J K-1 mol-1',
+        'gui_units': 'J K<sup>-1</sup> mol<sup>-1</sup>',
         'symbol': 'C<sub>p</sub>',
         'rounding': 0,
         'interval': [0, 500]
@@ -49,6 +53,7 @@ prop_models = {
     'k': {
         'name': 'Seebeck coefficient',
         'units': 'muV K-1',
+        'gui_units': '&mu;V K<sup>-1</sup>',
         'symbol': 'S',
         'rounding': 1,
         'interval': [-1000, 1000]
@@ -56,6 +61,7 @@ prop_models = {
     'm': {
         'name': 'temperature for congruent melting',
         'units': 'K',
+        'gui_units': 'K',
         'symbol': 'T<sub>fus</sub>',
         'rounding': 0,
         'interval': [10, 5000]
@@ -63,6 +69,7 @@ prop_models = {
     'd': {
         'name': 'Debye temperature',
         'units': 'K',
+        'gui_units': 'K',
         'symbol': '&Theta;<sub>D</sub>',
         'rounding': 0,
         'interval': [10, 2000]
@@ -70,20 +77,23 @@ prop_models = {
     't': {
         'name': 'linear thermal expansion coefficient',
         'units': 'K-1',
-        'symbol': '&alpha;(10<sup>-5</sup>)',
+        'gui_units': 'K<sup>-1</sup>',
+        'symbol': '&alpha;',
         'rounding': 2,
         'interval': [-0.001, 0.001]
     },
     'i': {
         'name': 'electrical conductivity', # NB also: electron conductivity + electrical resistivity
         'units': 'Omega-1 m-1',
-        'symbol': 'e<sup>&sigma;</sup>',
+        'gui_units': '&Omega;<sup>-1</sup> m<sup>-1</sup>',
+        'symbol': '&sigma;',
         'rounding': 6,
         'interval': [-28, 28]
     },
     'o': {
         'name': 'thermal conductivity',
         'units': 'W m-1 K-1',
+        'gui_units': 'W m<sup>-1</sup> K<sup>-1</sup>',
         'symbol': '&lambda;<sub>th</sub>',
         'rounding': 3,
         'interval': [0.001, 1000]
@@ -258,6 +268,7 @@ def get_legend(pred_dict):
         legend[key] = prop_models.get(key, {
             'name': 'Unspecified property ' + str(key),
             'units': 'arb.u.',
+            'gui_units': 'arb.u.',
             'symbol': 'P' + str(key),
             'rounding': 0
         })
