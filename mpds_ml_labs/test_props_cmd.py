@@ -1,10 +1,11 @@
 
 import os, sys
+import time
 
 from struct_utils import detect_format, poscar_to_ase, refine
 from cif_utils import cif_to_ase
-from prediction import ase_to_prediction, load_ml_models, prop_models
-from common import ML_MODELS, DATA_PATH
+from prediction import ase_to_prediction, load_ml_models, load_comp_models, prop_models
+from common import ML_MODELS, COMP_MODELS, DATA_PATH
 
 
 models, structures = [], []
@@ -29,6 +30,10 @@ if not structures:
     structures = [os.path.join(DATA_PATH, f) for f in os.listdir(DATA_PATH) if os.path.isfile(os.path.join(DATA_PATH, f)) and 'settings.ini' not in f]
 
 active_ml_models = load_ml_models(models)
+if COMP_MODELS:
+    active_ml_models = load_comp_models(COMP_MODELS, active_ml_models)
+
+start_time = time.time()
 
 for fname in structures:
     print(fname + "="*40)
@@ -70,3 +75,5 @@ for fname in structures:
             pdata['mae'],
             prop_models[prop_id]['units']
         ))
+
+print("Done in %1.2f sc" % time.time() - start_time)

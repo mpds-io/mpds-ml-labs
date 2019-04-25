@@ -21,12 +21,15 @@ if os.path.exists(config_path):
 
     SERVE_UI = config.getboolean('mpds_ml_labs', 'serve_ui')
     ML_MODELS = config.get('mpds_ml_labs', 'ml_models') or ''
+    COMP_MODELS = config.get('mpds_ml_labs', 'comp_models') or ''
     API_KEY = config.get('mpds_ml_labs', 'api_key')
     API_ENDPOINT = config.get('mpds_ml_labs', 'api_endpoint')
     ELS_ENDPOINT = config.get('mpds_ml_labs', 'els_endpoint')
 
-    ML_MODELS = [
+    ML_MODELS, COMP_MODELS = [
         path.strip() for path in filter(None, ML_MODELS.split())
+    ], [
+        path.strip() for path in filter(None, COMP_MODELS.split())
     ]
 
     KNN_TABLE = config.get('db', 'table')
@@ -34,6 +37,7 @@ if os.path.exists(config_path):
 else:
     SERVE_UI = True
     ML_MODELS = []
+    COMP_MODELS = []
     API_KEY = None
     API_ENDPOINT = None
     ELS_ENDPOINT = None

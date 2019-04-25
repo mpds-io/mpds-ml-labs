@@ -8,8 +8,8 @@ from flask import Flask, Blueprint, Response, request, send_from_directory
 
 from struct_utils import detect_format, poscar_to_ase, refine, get_formula, order_disordered
 from cif_utils import cif_to_ase, ase_to_eq_cif
-from prediction import prop_models, get_prediction, get_aligned_descriptor, get_ordered_descriptor, get_legend, load_ml_models
-from common import SERVE_UI, ML_MODELS, connect_database
+from prediction import prop_models, get_prediction, get_aligned_descriptor, get_ordered_descriptor, get_legend, load_ml_models, load_comp_models
+from common import SERVE_UI, ML_MODELS, COMP_MODELS, connect_database
 from knn_sample import knn_sample
 from similar_els import materialize, score
 from prediction_ranges import TOL_QUALITY
@@ -271,4 +271,8 @@ if __name__ == '__main__':
     # NB an external WSGI-compliant server is a must
     # while exposing to the outer world
 
-else: active_ml_models = load_ml_models(ML_MODELS)
+else:
+    active_ml_models = load_ml_models(ML_MODELS)
+
+if COMP_MODELS:
+    active_ml_models = load_comp_models(COMP_MODELS, active_ml_models)

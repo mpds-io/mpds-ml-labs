@@ -224,6 +224,34 @@ def load_ml_models(prop_model_files, debug=True):
     return ml_models
 
 
+def load_comp_models(prop_model_files, orig_models):
+    """
+    This is a modified loader interface
+    for treelite's compiled models,
+    to replace (swap) loaded sklearn models
+    NB model_comparator.py
+    """
+    print("Replacing the pure-Python models with the compiled models:")
+    print([(prop_id, model.metadata) for prop_id, model in orig_models.items()])
+
+    for modfile in prop_model_files:
+        prop_id = modfile.split('/')[-1][:1]
+        if prop_id not in orig_models:
+            raise RuntimeError('Unknown model file: %s' % modfile)
+
+        metadata = orig_models[prop_id].metadata
+        n_features = orig_models[prop_id].n_features_
+        orig_models[prop_id] = treelite.runtime.Predictor(modfile, verbose=False)
+        orig_models[prop_id].metadata = metadata
+        orig_models[prop_id].n_features_ = n_features
+        orig_models[prop_id].treelite = True
+
+    assert all([hasattr(model, 'treelite') for model in orig_models.values()])
+    print([(prop_id, model.metadata) for prop_id, model in orig_models.items()])
+
+    return orig_models
+
+
 def get_legend(pred_dict):
     legend = {}
     for key in pred_dict.keys():
