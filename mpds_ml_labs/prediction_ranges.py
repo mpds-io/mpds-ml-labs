@@ -1,6 +1,6 @@
 
 # This is fully empirical,
-# kept in testing purposes
+# kept in testing purposes,
 # not to generate nonsense
 
 prediction_ranges = {
@@ -11,7 +11,9 @@ prediction_ranges = {
     'w': [0.5, 10],
     'm': [300, 2700],
     'd': [175, 1100],
-    't': [-0.5, 10]
+    't': [-0.5, 10],
+    'i': [-20, 16], # exp
+    'o': [0, 120]
 }
 
 TOL_QUALITY = 0.30 # a part of the prop max-min distance, as a tolerance,
