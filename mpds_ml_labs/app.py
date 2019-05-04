@@ -66,10 +66,6 @@ if SERVE_UI:
     def md():
         return send_from_directory(static_path, 'design.html')
 
-    @app_labs.route('/jquery.min.js', methods=['GET'])
-    def jquery():
-        return send_from_directory(static_path, 'jquery.min.js')
-
     @app_labs.route('/nouislider.min.js', methods=['GET'])
     def nouislider():
         return send_from_directory(static_path, 'nouislider.min.js')

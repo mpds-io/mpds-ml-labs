@@ -14,10 +14,12 @@ div.button{cursor:pointer;font-size:2vmin;font-weight:normal;text-align:center;b
 
 div.content{width:65%;margin:0 auto;}
 
-#resultbox{display:none;margin-top:38px;}
-#resultbox ul li{font-size:1.5vmin;line-height:2vmin;list-style-position:inside;}
+#resultbox{display:none;margin-top:20px;}
+#resultbox ul li{font-size:1.5vmin;line-height:2.5vmin;list-style-position:inside;}
+#resultbox ul li sup{font-size:0.6em;vertical-align:super;line-height:0;}
 #resultbox i{font-family:"Courier New",Courier;font-weight:bold;}
 #resultbox a{text-decoration:none;color:#900;border-bottom:1px solid #900;}
+h1{font-weight:normal;line-height:2vmin;text-align:center;}
 
 #ctrlbox{display:none;margin:2vmin auto 4vmin;}
 #ctrlbox > div.button{margin:0 auto;width:20vmin;}
@@ -37,6 +39,7 @@ div.content{width:65%;margin:0 auto;}
     height:3vmin;
     position:relative;
     margin:3vmin 0;
+    cursor:pointer;
 }
 #fileapi_container input {
     width:100%;
@@ -70,7 +73,6 @@ div.content{width:65%;margin:0 auto;}
 @-webkit-keyframes spin { 100% { -webkit-transform:rotate(360deg); } }
 @keyframes spin { 100% { transform:rotate(360deg); } }
 </style>
-<script type="text/javascript" src="jquery.min.js"></script>
 </head>
 <body>
 
@@ -120,14 +122,12 @@ loop_
 
 <script type="text/javascript">
 "use strict";
+
 window.player_src = 'player.html';
 window.req_endpoint = (window.location.hostname=='localhost' || window.location.hostname=='127.0.0.1' || window.location.hostname=='') ? 'http://127.0.0.1:' + window.location.port + '/predict' : 'https://labs.mpds.io/predict';
 window.local_supported = window.File && window.FileReader && window.FileList && window.Blob;
 window.playerdata = null;
-
-function show_preloader(){ $('#spinner').show(); }
-
-function hide_preloader(){ $('#spinner').hide(); }
+window.xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
 
 function cancel_event(evt){
     evt = evt || window.event;
@@ -151,7 +151,7 @@ function handleFileSelect(evt){
     var reader = new FileReader();
 
     reader.onloadend = function(evt){
-        $('#input').val(evt.target.result.replace(/(\r\n|\r)/gm, "\n"));
+        document.getElementById('input').value = evt.target.result.replace(/(\r\n|\r)/gm, "\n");
     }
     reader.abort = function(){ alert('Error: file reading has been cancelled') }
     reader.onerror = function(){ alert('Error: file reading has been cancelled') }
@@ -167,77 +167,79 @@ function handleDragOver(evt){
 function process_result(data){
     if (data.error) return alert(data.error);
 
-    $('#inputbox').hide();
+    document.getElementById('inputbox').style.display = 'none';
 
-    var result_html = '<ul>';
+    var result_html = '<h1>' + data.formula + '</h1><ul>';
 
-    $.each(data.prediction, function(key, item){
+    for (var key in data.prediction){
         if (key == 't') // normalization 10**5
             data.legend[key].gui_units = '10<sup>-5</sup> ' + data.legend[key].gui_units;
         else if (key == 'i'){ // scaling log
-            item.value = Math.round(Math.exp(item.value) * 10000) / 10000;
-            item.mae = Math.round(Math.exp(item.mae) * 10000) / 10000;
+            data.prediction[key].value = Math.round(Math.exp(data.prediction[key].value) * 10000) / 10000;
+            data.prediction[key].mae = Math.round(Math.exp(data.prediction[key].mae) * 10000) / 10000;
         }
 
-        result_html += '<li><strong>' + data.legend[key].name + '</strong> <i>' + data.legend[key].symbol + '</i> = ' + item.value + ' ' + data.legend[key].gui_units + ' (&plusmn; ' + item.mae + ' ' + data.legend[key].gui_units + ')';
-    });
+        result_html += '<li><strong>' + data.legend[key].name + '</strong> <i>' + data.legend[key].symbol + '</i> = ' + data.prediction[key].value + ' ' + data.legend[key].gui_units + ' (&plusmn; ' + data.prediction[key].mae + ' ' + data.legend[key].gui_units + ')';
+    }
+
     result_html += '</ul>';
 
-    $('#resultbox').html(result_html).show();
-    $('h1').html(data.formula);
+    document.getElementById('resultbox').innerHTML = result_html;
+    document.getElementById('resultbox').style.display = 'block';
 
     window.playerdata = data.p1_cif;
-    $('#playerbox').empty().html('<iframe frameborder=0 scrolling="no" width="100%" height="560" src="' + window.player_src + '"></iframe>').show();
-    $('#ctrlbox').show();
+    document.getElementById('playerbox').innerHTML = '<iframe frameborder=0 scrolling="no" width="100%" height="560" src="' + window.player_src + '"></iframe>';
+    document.getElementById('playerbox').style.display = 'block';
+    document.getElementById('ctrlbox').style.display = 'block';
 }
 
-$(document).ready(function(){
+(function(){
 
     if (window.local_supported){
-        $('#fileapi_container').show();
+        document.getElementById('fileapi_container').style.display = 'block';
 
         window.addEventListener('dragover', handleDragOver, false);
         window.addEventListener('drop', handleFileSelect, false);
 
         var fileapi = document.getElementById('fileapi'),
             reader = new FileReader();
+
         fileapi.onchange = function(){
             if (!this.files[0] || !this.files[0].size) return alert('Error: this file cannot be read (unaccessible?)');
             reader.currentFilename = this.files[0].name;
             reader.readAsText(this.files[0]);
         }
         reader.onloadend = function(evt){
-            $('#input').val(evt.target.result.replace(/(\r\n|\r)/gm, "\n"));
+            document.getElementById('input').value = evt.target.result.replace(/(\r\n|\r)/gm, "\n");
         }
     }
 
-    $('#predict_trigger').click(function(){
-        if ($(this).data('busy')) return;
-        $(this).data('busy', true).text('Busy...');
+    document.getElementById('predict_trigger').onclick = function(){
+        if (!!this.dataset.busy) return;
+        this.dataset.busy = true;
+        this.innerText = 'Busy...';
 
-        $.ajax({type: 'POST', url: window.req_endpoint, data: {
-            structure: $('#input').val()
+        window.xhr.onreadystatechange = function(){
+            if (window.xhr.readyState == 4){
+                delete document.getElementById('predict_trigger').dataset.busy;
+                document.getElementById('predict_trigger').innerText = 'Predict';
+                document.getElementById('spinner').style.display = 'none';
+                if (window.xhr.status == 200 || window.xhr.status == 400) process_result(JSON.parse(window.xhr.responseText));
+                else if (window.xhr.status) alert('Error: HTTP error ' + window.xhr.status + ' received during retrieving data from the server');
+                else alert('Error: no response received');
+            }
+        }
+        document.getElementById('spinner').style.display = 'block';
+        window.xhr.open('POST', window.req_endpoint, true);
+        window.xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+        window.xhr.send('structure=' + escape(document.getElementById('input').value));
+    };
 
-        }, beforeSend: show_preloader}).always(function(){
-            $('#predict_trigger').data('busy', false).text('Predict');
-            hide_preloader();
-
-        }).done(function(data){
-            process_result(data);
-
-        }).fail(function(xhr, textStatus, errorThrown){
-            $('#predict_trigger').data('busy', false).text('Predict');
-            if (xhr.responseJSON && xhr.responseJSON.error) alert(xhr.responseJSON.error);
-            else alert('A network error occured. Please, try again');
-
-        });
-    });
-
-    $('#refresh_trigger').click(function(){
+    document.getElementById('refresh_trigger').onclick = function(){
         document.location.reload();
-    });
+    };
 
-});
+})();
 </script>
 </body>
 </html>

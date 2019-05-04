@@ -159,7 +159,7 @@ def get_ordered_descriptor(ase_obj, kappa=None, overreach=False):
     if 'disordered' not in ase_obj.info:
         return None, "Expected disordered structure, got ordered structure"
 
-    from mpds_ml_labs.struct_utils import order_disordered
+    from struct_utils import order_disordered
 
     descriptor = None
     for _ in range(N_ITER_DISORDER):
@@ -286,7 +286,7 @@ def ase_to_prediction(ase_obj, ml_models, prop_ids=False):
     """
     if 'disordered' in ase_obj.info:
 
-        from mpds_ml_labs.struct_utils import order_disordered
+        from struct_utils import order_disordered
 
         results, avg_results = {}, {}
         for _ in range(N_ITER_DISORDER):
