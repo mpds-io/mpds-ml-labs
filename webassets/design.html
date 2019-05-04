@@ -2,10 +2,10 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
 <meta charset="utf-8" />
+<title>Materials Design | MPDS</title>
 <link rel="stylesheet" type="text/css" href="common.css" />
 <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
-<title>Materials Design | MPDS</title>
 <style type="text/css">
 /* Common styles */
 
@@ -18,12 +18,12 @@ div.cross{float:right;width:16px;height:16px;font-size:10px;text-align:center;cu
 
 #panel{position:fixed;z-index:300;width:30vw;height:auto;top:20px;left:50vw;margin-left:-15vw;background:#fbfbfb;padding:0.5vw;border:1px solid #EAEAEA;box-shadow:0px 1px 1px 0px rgba(0,0,0,0.2);}
 #panel strong{display:block;margin:5px 0;font-size:1.5vw;font-weight:normal;width:100%;text-align:center;}
-#panel ul li{list-style:none;display:block;margin:28px 0;}
+#panel ul li{list-style:none;display:block;margin:25px 0;}
 #panel ul li#slider_holder_0{display:none;font-size:1vw;line-height:2.5vw;text-align:center;}
 div.title{width:100%;clear:both;text-align:center;font-size:1vw;line-height:2.5em;}
 div.snap{width:18%;text-align:center;font-size:0.85vw;}
 div.slider{width:64%;float:left;}
-#demo_trigger{width:10vh;margin:4.5vw auto 0.5vw;cursor:pointer;font-size:2vh;font-weight:normal;text-align:center;border:1px solid #3e3f95;background:#3e3f95;color:#fff;line-height:1.4em;border-radius:2px;text-decoration:none;box-shadow:inset 0 2px 2px rgba(255,255,255,0.3), inset 0 -2px 2px rgba(0,0,0,0.3), inset 0 20px 10px rgba(255,255,255,0.3), 0 0 2px 1px rgba(0,0,0,0.2), 0 2px 2px rgba(0,0,0,0.3);}
+#demo_trigger{width:10vh;margin:3vw auto 0.5vw;cursor:pointer;font-size:2vh;font-weight:normal;text-align:center;border:1px solid #3e3f95;background:#3e3f95;color:#fff;line-height:1.4em;border-radius:2px;text-decoration:none;box-shadow:inset 0 2px 2px rgba(255,255,255,0.3), inset 0 -2px 2px rgba(0,0,0,0.3), inset 0 20px 10px rgba(255,255,255,0.3), 0 0 2px 1px rgba(0,0,0,0.2), 0 2px 2px rgba(0,0,0,0.3);}
 
 #results{display:none;position:absolute;z-index:200;width:30vw;height:auto;top:20px;left:50vw;margin-left:-15vw;margin-bottom:5vw;background:#fff;padding:0.5vw;border:1px solid #EAEAEA;box-shadow:0px 1px 1px 0px rgba(0,0,0,0.2);}
 #results ul li{list-style:none;display:block;width:100%;line-height:2em;border-top:1px solid #000;}
@@ -35,7 +35,7 @@ div.slider{width:64%;float:left;}
 #info strong{line-height:2.4em;}
 #info strong a, #info strong span{cursor:pointer;text-decoration:none;color:#c00;border-bottom:1px solid #c00;}
 #info_table{width:100%;margin:0 0 10px;}
-#info_table ul li{list-style:none;display:block;width:100%;line-height:2em;border-top:1px solid #000;letter-spacing:-0.5px;}
+#info_table ul li{list-style:none;display:block;width:100%;line-height:1.8em;border-top:1px solid #000;letter-spacing:-0.5px;overflow:hidden;}
 #info_table ul li span{display:inline-block;float:right;}
 #info_table ul li strong{color:#c00;font-style:italic;}
 
@@ -137,97 +137,67 @@ div.slider{width:64%;float:left;}
 <script type="text/javascript">
 "use strict";
 
-// A cross-browser wrapper for DOMContentLoaded by Diego Perini, version 1.2
-function contentLoaded(win, fn){
-    var done = false, top = true,
-    doc = win.document,
-    root = doc.documentElement,
-    modern = doc.addEventListener,
-
-    add = modern ? 'addEventListener' : 'attachEvent',
-    rem = modern ? 'removeEventListener' : 'detachEvent',
-    pre = modern ? '' : 'on',
-
-    init = function(e) {
-        if (e.type == 'readystatechange' && doc.readyState != 'complete') return;
-        (e.type == 'load' ? win : doc)[rem](pre + e.type, init, false);
-        if (!done && (done = true)) fn.call(win, e.type || e);
-    },
-
-    poll = function() {
-        try { root.doScroll('left'); } catch(e) { setTimeout(poll, 50); return; }
-        init('poll');
-    };
-
-    if (doc.readyState == 'complete') fn.call(win, 'lazy');
-    else {
-        if (!modern && root.doScroll) {
-            try { top = !win.frameElement; } catch(e) { }
-            if (top) poll();
-        }
-        doc[add](pre + 'DOMContentLoaded', init, false);
-        doc[add](pre + 'readystatechange', init, false);
-        win[add](pre + 'load', init, false);
-    }
-}
-
 // The main content
-window.prop_models = {
+window.prop_models = { // NB this duplicates Python *prop_models* and *prediction_ranges*
     'z': {
         'name': 'isothermal bulk modulus',
         'units': 'GPa',
-        'symbol': 'B<sub>T</sub>',
         'dx': 1,
         'range': [5, 265]
     },
     'y': {
         'name': 'enthalpy of formation',
-        'units': 'kJ g-at.<sup>-1</sup>',
-        'symbol': '&Delta;<sub>f</sub>H',
+        'units': 'kJ mol<sup>-1</sup>',
         'dx': 1,
         'range': [-325, 0]
     },
     'x': {
         'name': 'heat capacity at constant pressure',
-        'units': 'J K<sup>-1</sup> g-at.<sup>-1</sup>',
-        'symbol': 'C<sub>p</sub>',
+        'units': 'J K<sup>-1</sup> mol<sup>-1</sup>',
         'dx': 1,
         'range': [11, 28] // NB internally treated as *10 at the backend
     },
     'k': {
         'name': 'Seebeck coefficient',
-        'units': 'muV K<sup>-1</sup>',
-        'symbol': 'S',
+        'units': '&mu;V K<sup>-1</sup>',
         'dx': 1,
         'range': [-150, 225]
     },
     'w': {
         'name': 'energy gap',
         'units': 'eV',
-        'symbol': 'E<sub>g</sub>',
         'dx': 0.5,
         'range': [0.5, 10] // NB internally treated as *10 at the backend
     },
     'm': {
         'name': 'temperature for congruent melting',
         'units': 'K',
-        'symbol': 'T<sub>fus</sub>',
         'dx': 1,
         'range': [300, 2700]
     },
     'd': {
         'name': 'Debye temperature',
         'units': 'K',
-        'symbol': '&Theta;<sub>D</sub>',
         'dx': 1,
         'range': [175, 1100]
     },
     't': {
         'name': 'linear thermal expansion coefficient',
         'units': 'K<sup>-1</sup> 10<sup>-5</sup>',
-        'symbol': '&alpha;',
         'dx': 0.5,
         'range': [-0.5, 10] // NB internally treated as *10 at the backend
+    },
+    'i': {
+        'name': 'electrical conductivity',
+        'units': 'exponent of &Omega;<sup>-1</sup> m<sup>-1</sup>',
+        'dx': 1,
+        'range': [-20, 16]
+    },
+    'o': {
+        'name': 'thermal conductivity',
+        'units': 'W m<sup>-1</sup> K<sup>-1</sup>',
+        'dx': 1,
+        'range': [3, 120]
     }
 };
 
@@ -387,7 +357,7 @@ function handle_info(payload, phid){
 
     var output = '<ul>';
     for (var prop_id in window.prop_models){
-        if (prop_id == 't') payload.props[prop_id] = payload.props[prop_id] * 100000;
+        if (prop_id == 't' && payload.props[prop_id]) payload.props[prop_id] = payload.props[prop_id] * 100000;
 
         var asterisk_info = '',
             data = document.getElementById('slider_' + prop_id).noUiSlider.get();
@@ -398,7 +368,7 @@ function handle_info(payload, phid){
         if (payload.formula && prop_id != 'w' && (payload.props[prop_id] < data[0] || payload.props[prop_id] > data[1]))
             asterisk_info = ', <strong>out of bounds</strong>';
 
-        if (prop_id == 't') payload.props[prop_id] = payload.props[prop_id].toPrecision(2);
+        if (prop_id == 't' && payload.props[prop_id]) payload.props[prop_id] = payload.props[prop_id].toPrecision(2);
 
         output += '<li>' + window.prop_models[prop_id]['name'] + ', ' + window.prop_models[prop_id]['units'] + asterisk_info + ' <span>' + (payload.props[prop_id] || '&mdash;') + '</span></li>';
     }
@@ -421,7 +391,7 @@ function handle_info(payload, phid){
     if (!info.classList.contains('_4_5')) info.classList.add('_4_5');
 }
 
-contentLoaded(window, function(){
+(function(){
 
     var slider_html = '';
     for (var prop_id in window.prop_models){
@@ -451,7 +421,7 @@ contentLoaded(window, function(){
         });
 
         if (prop_id == 'w') addendum = '<input id="trigger_w" type="checkbox" checked="checked" /><label for="trigger_w"> insulator</label>, ';
-        document.getElementById('title_' + prop_id).innerHTML = addendum + window.prop_models[prop_id]['name'] + ', ' + window.prop_models[prop_id]['units'];
+        document.getElementById('title_' + prop_id).innerHTML = addendum + '<b>' + window.prop_models[prop_id]['name'] + '</b>, ' + window.prop_models[prop_id]['units'];
 
         // handler #1
         slider.noUiSlider.on('update', function(values, handle){
@@ -533,7 +503,7 @@ contentLoaded(window, function(){
 
     // handler #7
     document.getElementById('demo_trigger').onclick = request_search;
-});
+})();
 </script>
 </body>
 </html>
