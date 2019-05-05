@@ -14,10 +14,12 @@ import pg8000
 
 DATA_PATH = os.path.realpath(os.path.join(os.path.dirname(__file__), '../data'))
 config = ConfigParser()
-config_path = os.path.join(DATA_PATH, 'settings.ini')
+config_path_a = './mpds_ml_labs.ini'
+config_path_b = os.path.join(DATA_PATH, 'settings.ini')
+current_config = config_path_a if os.path.exists(config_path_a) else (config_path_b if os.path.exists(config_path_b) else None)
 
-if os.path.exists(config_path):
-    config.read(config_path)
+if current_config:
+    config.read(current_config)
 
     SERVE_UI = config.getboolean('mpds_ml_labs', 'serve_ui')
     ML_MODELS = config.get('mpds_ml_labs', 'ml_models') or ''
