@@ -138,12 +138,12 @@ div.slider{width:64%;float:left;}
 "use strict";
 
 // The main content
-window.prop_models = { // NB this duplicates Python *prop_models* and *prediction_ranges*
+window.prop_models = { // NB this should concern Python *prop_models* and *prediction_ranges*
     'z': {
         'name': 'isothermal bulk modulus',
         'units': 'GPa',
         'dx': 1,
-        'range': [5, 265]
+        'range': [5, 350]
     },
     'y': {
         'name': 'enthalpy of formation',
@@ -161,7 +161,7 @@ window.prop_models = { // NB this duplicates Python *prop_models* and *predictio
         'name': 'Seebeck coefficient',
         'units': '&mu;V K<sup>-1</sup>',
         'dx': 1,
-        'range': [-150, 225]
+        'range': [-150, 250]
     },
     'w': {
         'name': 'energy gap',
@@ -173,25 +173,25 @@ window.prop_models = { // NB this duplicates Python *prop_models* and *predictio
         'name': 'temperature for congruent melting',
         'units': 'K',
         'dx': 1,
-        'range': [300, 2700]
+        'range': [100, 2700]
     },
     'd': {
         'name': 'Debye temperature',
         'units': 'K',
         'dx': 1,
-        'range': [175, 1100]
+        'range': [150, 1100]
     },
     't': {
         'name': 'linear thermal expansion coefficient',
         'units': 'K<sup>-1</sup> 10<sup>-5</sup>',
         'dx': 0.5,
-        'range': [-0.5, 10] // NB internally treated as *10 at the backend
+        'range': [0, 50] // NB internally treated as *10 at the backend
     },
     'i': {
         'name': 'electrical conductivity',
         'units': 'exponent of &Omega;<sup>-1</sup> m<sup>-1</sup>',
         'dx': 1,
-        'range': [-20, 16]
+        'range': [-20, 16] // NB internally treated as LN * 100 at the backend
     },
     'o': {
         'name': 'thermal conductivity',
@@ -329,8 +329,11 @@ function handle_search(payload){
     } else output += '<li><div>No results known. Try to <strong class="design_trigger">design a new material</strong>.</div></li>';
 
     output += '</ul>';
-    results.innerHTML = output;
-    results.style.display = 'block';
+    results.style.display = 'none';
+    setTimeout(function(){
+        results.innerHTML = output;
+        results.style.display = 'block';
+    }, 250);
 
     if (!panel.classList.contains('_3_2')) panel.classList.add('_3_2');
     if (!results.classList.contains('_3_4')) results.classList.add('_3_4');
