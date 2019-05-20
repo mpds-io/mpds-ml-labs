@@ -117,26 +117,7 @@ def ase_to_eq_cif(ase_obj, supply_sg=True, mpds_labs_loop=None):
     with symmetry-equivalent atoms;
     augment with the aux info, if needed
     """
-    if supply_sg:
-        sg_string = "_symmetry_space_group_name_H-M '%s'\n_symmetry_Int_Tables_number %s\n" % (
-            getattr(ase_obj.info.get('spacegroup', object), 'symbol', 'P1'),
-            getattr(ase_obj.info.get('spacegroup', object), 'no', 1)
-        )
-    else: sg_string = ""
-
-    parameters = cell_to_cellpar(ase_obj.cell)
-
     cif_data  = 'data_mpds_labs\n'
-    cif_data += '_cell_length_a    ' + "%2.6f" % parameters[0] + "\n"
-    cif_data += '_cell_length_b    ' + "%2.6f" % parameters[1] + "\n"
-    cif_data += '_cell_length_c    ' + "%2.6f" % parameters[2] + "\n"
-    cif_data += '_cell_angle_alpha ' + "%2.6f" % parameters[3] + "\n"
-    cif_data += '_cell_angle_beta  ' + "%2.6f" % parameters[4] + "\n"
-    cif_data += '_cell_angle_gamma ' + "%2.6f" % parameters[5] + "\n"
-    cif_data += sg_string
-    cif_data += '\nloop_' + "\n"
-    cif_data += ' _symmetry_equiv_pos_as_xyz' + "\n"
-    cif_data += ' +x,+y,+z' + "\n"
 
     if type(mpds_labs_loop) == list:
         cif_data += '\n_mpds_prediction_quality %s/%s' % (mpds_labs_loop[0], len(mpds_labs_loop) - 1) + "\n"
@@ -148,6 +129,26 @@ def ase_to_eq_cif(ase_obj, supply_sg=True, mpds_labs_loop=None):
         cif_data += ' _mpds_labs_units' + "\n"
         for deck in mpds_labs_loop[1:]:
             cif_data += " " + " ".join(map(str, deck)) + "\n"
+
+    parameters = cell_to_cellpar(ase_obj.cell)
+    cif_data += '_cell_length_a    ' + "%2.6f" % parameters[0] + "\n"
+    cif_data += '_cell_length_b    ' + "%2.6f" % parameters[1] + "\n"
+    cif_data += '_cell_length_c    ' + "%2.6f" % parameters[2] + "\n"
+    cif_data += '_cell_angle_alpha ' + "%2.6f" % parameters[3] + "\n"
+    cif_data += '_cell_angle_beta  ' + "%2.6f" % parameters[4] + "\n"
+    cif_data += '_cell_angle_gamma ' + "%2.6f" % parameters[5] + "\n"
+
+    if supply_sg:
+        sg_string = "_symmetry_space_group_name_H-M '%s'\n_symmetry_Int_Tables_number %s\n" % (
+            getattr(ase_obj.info.get('spacegroup', object), 'symbol', 'P1'),
+            getattr(ase_obj.info.get('spacegroup', object), 'no', 1)
+        )
+    else: sg_string = ""
+    cif_data += sg_string
+
+    cif_data += '\nloop_' + "\n"
+    cif_data += ' _symmetry_equiv_pos_as_xyz' + "\n"
+    cif_data += ' +x,+y,+z' + "\n"
 
     cif_data += '\nloop_' + "\n"
     cif_data += ' _atom_site_type_symbol' + "\n"
