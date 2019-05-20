@@ -9,7 +9,7 @@ import json
 import httplib2
 
 from prediction import prop_models, periodic_elements, periodic_numbers, ase_to_prediction
-from prediction_ranges import prediction_ranges
+from prediction_ranges import prediction_ranges, RANGE_TOLERANCE
 from struct_utils import json_to_ase
 from common import API_KEY, ELS_ENDPOINT
 
@@ -21,7 +21,7 @@ __license__ = 'LGPL-2.1+'
 
 network = httplib2.Http()
 
-norm = {
+normalized_f = {
     prop_id: lambda x: (x - bound[0]) / (bound[1] - bound[0])
     for prop_id, bound in prediction_ranges.items()
 }
@@ -80,7 +80,7 @@ def get_similar_els(els):
 
 def get_similar_structs(els_comb):
     """
-    Exploit an *els_comb* MPDS API method,
+    Employ an *els_comb* MPDS API method,
     returning the MPDS S-entries,
     composed by the given chemical elements
     """
@@ -176,28 +176,28 @@ def materialize(given_els, active_ml_models):
 
     els_comb.append(compacted_els)
 
-    scoring, error = massage_by_similarity(els_comb, compacted_els, new_occs, active_ml_models)
+    sequence, error = massage_by_similarity(els_comb, compacted_els, new_occs, active_ml_models)
     if error:
         return None, error
 
-    if not scoring:
+    if not sequence:
         for child in els_comb:
 
             grand_child_els_comb, error = get_similar_els(child)
             if error:
                 return None, error
 
-            scoring, error = massage_by_similarity(grand_child_els_comb, compacted_els, new_occs, active_ml_models)
+            sequence, error = massage_by_similarity(grand_child_els_comb, compacted_els, new_occs, active_ml_models)
             if error:
                 return None, error
 
-            if scoring:
+            if sequence:
                 break
 
-    if not scoring:
+    if not sequence:
         return None, "No results (cannot compile crystal structure)"
 
-    return scoring, None
+    return sequence, None
 
 
 def massage_by_similarity(input_els_comb, ref_els, ref_occs, active_ml_models):
@@ -206,14 +206,14 @@ def massage_by_similarity(input_els_comb, ref_els, ref_occs, active_ml_models):
     if error:
         return None, error
 
-    scoring = []
+    sequence = []
 
     for row in rows:
         els_were = list(set(ref_els) - set(row['els_noneq']))
         els_are = list(set(row['els_noneq']) - set(ref_els))
 
         if len(els_were) != len(els_are):
-            logging.error("Error: there were els: %s; there are els: %s" % ('-'.join(els_were), '-'.join(els_are)))
+            logging.error("Error: there were els: %s; there are els: %s (entry %s)" % ('-'.join(els_were), '-'.join(els_are), row['entry']))
             continue
 
         els_were.sort(key=lambda x: periodic_numbers[periodic_elements.index(x)])
@@ -232,7 +232,7 @@ def massage_by_similarity(input_els_comb, ref_els, ref_occs, active_ml_models):
             for another_el in ref_occs.get(new_el, []):
                 new_els.append(another_el)
                 row['basis_noneq'].append(row['basis_noneq'][n])
-                row['occs_noneq'][n] /= len(ref_occs[new_el]) + 1
+                row['occs_noneq'][n] /= (len(ref_occs[new_el]) + 1)
                 row['occs_noneq'].append(row['occs_noneq'][n])
 
         ase_obj, error = json_to_ase([row['occs_noneq'], row['cell_abc'], row['sg_n'], row['basis_noneq'], new_els])
@@ -243,34 +243,52 @@ def massage_by_similarity(input_els_comb, ref_els, ref_occs, active_ml_models):
         if error:
             return None, error
 
-        scoring.append({"structure": ase_obj, "prediction": prediction})
+        sequence.append({"structure": ase_obj, "prediction": prediction})
 
-    return scoring, None
+    return sequence, None
 
 
-def score(scoring, prop_ranges_dict):
+def score_abs(sequence, prop_ranges_dict):
 
-    if len(scoring) == 1:
-        return scoring[0]
+    if len(sequence) == 1:
+        return sequence[0]
 
     ideal_predictions = {prop_id: (prop_ranges_dict[prop_id + '_min'] + prop_ranges_dict[prop_id + '_max']) / 2 for prop_id in prop_models}
 
-    scoring.sort(key=lambda x: sum([
-        norm[prop_id]( abs(ideal_predictions[prop_id] - x["prediction"][prop_id]["value"]) ) for prop_id in prop_models
+    sequence.sort(key=lambda x: sum([
+        normalized_f[prop_id]( abs(ideal_predictions[prop_id] - x["prediction"][prop_id]["value"]) ) for prop_id in prop_models
     ]))
 
     #print("*"*50)
     #pprint(ideal_predictions)
     #print("vs.")
-    #pprint(scoring)
+    #pprint(sequence)
     #print("*"*50)
 
-    return scoring[0]
+    return sequence[0]
+
+
+def score_grade(sequence, prop_ranges_dict, range_tols):
+
+    assert range_tols
+
+    for n in range(len(sequence)):
+
+        assert sequence[n]['prediction']
+        sequence[n]["grade"] = 0
+
+        for prop_id in prop_models:
+
+            if prop_ranges_dict[prop_id + '_min'] - range_tols[prop_id] < sequence[n]['prediction'][prop_id]['value'] < prop_ranges_dict[prop_id + '_max'] + range_tols[prop_id]:
+                sequence[n]["grade"] += 1
+
+    sequence.sort(key=lambda x: x["grade"], reverse=True)
+    return sequence[0]
 
 
 if __name__ == "__main__":
 
-    print(score([
+    print(score_grade([
         {'prediction':{
             'z': {'value': 400},
             'y': {'value': 16},
@@ -279,7 +297,9 @@ if __name__ == "__main__":
             'w': {'value': 2},
             'm': {'value': 1000},
             'd': {'value': 800},
-            't': {'value': 20}
+            't': {'value': 20},
+            'i': {'value': 1000},
+            'o': {'value': 1}
         }},
         {'prediction':{
             'z': {'value': 401},
@@ -289,7 +309,9 @@ if __name__ == "__main__":
             'w': {'value': 25},
             'm': {'value': 1000},
             'd': {'value': 800},
-            't': {'value': 2}
+            't': {'value': 2},
+            'i': {'value': 1000},
+            'o': {'value': 1}
         }},
         {'prediction':{
             'z': {'value': 400},
@@ -299,7 +321,9 @@ if __name__ == "__main__":
             'w': {'value': 50},
             'm': {'value': 2200},
             'd': {'value': 915},
-            't': {'value': 21}
+            't': {'value': 21},
+            'i': {'value': 1000},
+            'o': {'value': 1}
         }}
     ], {
         'z_min': 399, 'z_max': 401,
@@ -309,10 +333,39 @@ if __name__ == "__main__":
         'w_min': -100, 'w_max': 100,
         'm_min': 2000, 'm_max': 3000,
         'd_min': 900, 'd_max': 950,
-        't_min': -10, 't_max': -9
+        't_min': -10, 't_max': -9,
+        'i_min': 1200, 'i_max': 1400,
+        'o_min': -10, 'o_max': 0
     }))
 
     print(compact_by_disorder(['Si', 'Cr', 'Mo', 'W', 'O']))
     print(compact_by_disorder(['Li', 'O', 'Mn', 'B', 'Fr', 'Re', 'Tc', 'Ga', 'Ra', 'Al']))
     print(compact_by_disorder(['V', 'Cr', 'Mn', 'Rn']))
     print(compact_by_disorder(['Cl', 'Na', 'Dy']))
+
+    import random
+
+    sample = {}
+    for prop_id in prediction_ranges:
+        dice = random.choice([0, 1])
+        bound = (prediction_ranges[prop_id][1] - prediction_ranges[prop_id][0]) / 4
+        if dice:
+            sample[prop_id + '_min'] = prediction_ranges[prop_id][0] + bound * 3
+            sample[prop_id + '_max'] = prediction_ranges[prop_id][1]
+        else:
+            sample[prop_id + '_min'] = prediction_ranges[prop_id][0]
+            sample[prop_id + '_max'] = prediction_ranges[prop_id][0] + bound
+
+    range_tols = {
+        prop_id: (sample[prop_id + '_max'] - sample[prop_id + '_min']) * RANGE_TOLERANCE
+        for prop_id in prop_models
+    }
+
+    def gen_mockup_result():
+        return {'prediction': {
+            prop_id: {'value': random.uniform(*bounds)} for prop_id, bounds in prediction_ranges.items()
+        }}
+
+    results = [gen_mockup_result() for _ in range(500)]
+    #print(score_abs(results, sample))
+    print(score_grade(results, sample, range_tols))
