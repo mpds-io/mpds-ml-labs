@@ -11,8 +11,8 @@ from cif_utils import cif_to_ase, ase_to_eq_cif
 from prediction import prop_models, get_prediction, get_aligned_descriptor, get_ordered_descriptor, get_legend, load_ml_models, load_comp_models
 from common import SERVE_UI, ML_MODELS, COMP_MODELS, connect_database
 from knn_sample import knn_sample
-from similar_els import materialize, score
-from prediction_ranges import TOL_QUALITY
+from similar_els import materialize, score_grade, score_abs
+from prediction_ranges import RANGE_TOLERANCE
 
 
 __author__ = 'Evgeny Blokhin <eb@tilde.pro>'
@@ -24,13 +24,16 @@ app_labs = Blueprint('app_labs', __name__)
 static_path = os.path.realpath(os.path.join(os.path.dirname(__file__), '../webassets'))
 active_ml_models = {}
 
+
 def fmt_msg(msg, http_code=400):
     return Response('{"error":"%s"}' % msg, content_type='application/json', status=http_code)
+
 
 def is_plain_text(test):
     try: test.encode('ascii')
     except: return False
     else: return True
+
 
 def html_formula(string):
     sub, formula = False, ''
@@ -47,6 +50,7 @@ def html_formula(string):
     if sub:
         formula += '</sub>'
     return formula
+
 
 if SERVE_UI:
     @app_labs.route('/', methods=['GET'])
@@ -70,10 +74,12 @@ if SERVE_UI:
     def nouislider():
         return send_from_directory(static_path, 'nouislider.min.js')
 
+
 @app_labs.after_request
 def add_cors_header(response):
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
+
 
 @app_labs.route("/predict", methods=['POST'])
 def predict():
@@ -141,6 +147,7 @@ def predict():
         content_type='application/json'
     )
 
+
 @app_labs.route("/download_cif", methods=['POST'])
 def download_cif():
     """
@@ -159,6 +166,7 @@ def download_cif():
     return Response(structure, mimetype="chemical/x-cif", headers={
         "Content-Disposition": "attachment;filename=%s.cif" % title
     })
+
 
 @app_labs.route("/design", methods=['POST'])
 def design():
@@ -188,27 +196,41 @@ def design():
     if user_ranges_dict['w_min'] == 0 and user_ranges_dict['w_max'] == 0:
         user_ranges_dict['w_min'], user_ranges_dict['w_max'] = -100, 100 # NB. any band gap is allowed
 
-    cursor, connection = connect_database()
+    range_tols = {
+        prop_id: (user_ranges_dict[prop_id + '_max'] - user_ranges_dict[prop_id + '_min']) * RANGE_TOLERANCE
+        for prop_id in prop_models
+    }
 
     result, error = None, "No results (outside of prediction capabilities)"
 
+    cursor, connection = connect_database()
     els_samples = knn_sample(cursor, user_ranges_dict)
-    for els_sample in els_samples:
-        #print("TRYING TO MATERIALIZE", ", ".join(els_sample))
-
-        scoring, error = materialize(els_sample, active_ml_models)
-        if error or not scoring:
-            continue
-
-        result = score(scoring, user_ranges_dict)
-        break
-
     connection.close()
 
-    if result:
+    results = []
+    LIMIT_TOL = 1
+    while len(els_samples):
+        #print("TRYING TO MATERIALIZE", ", ".join(els_sample))
+
+        els_sample = els_samples.pop()
+
+        sequence, error = materialize(els_sample, active_ml_models)
+        if error or not sequence:
+            continue
+
+        result = score_grade(sequence, user_ranges_dict, range_tols)
+        if result['grade'] > 6:
+            results.append(result)
+
+        if len(results) > LIMIT_TOL:
+            break
+
+    if results:
+        result = score_abs(results, user_ranges_dict)
+
         answer_props = {prop_id: result['prediction'][prop_id]['value'] for prop_id in result['prediction']}
         answer_props['t'] /= 100000 # normalization 10**5
-        answer_props['i'] = exp(answer_props['i']) # scaling log
+        # NB. no scaling for *i* here
 
         if 'disordered' in result['structure'].info:
             result['structure'], error = order_disordered(result['structure'])
@@ -217,7 +239,7 @@ def design():
 
         formula = get_formula(result['structure'])
 
-        result_quality, aux_info = 0, []
+        aux_info = []
         for k, v in answer_props.items():
             aux_info.append([
                 prop_models[k]['name'].replace(' ', '_'),
@@ -226,16 +248,12 @@ def design():
                 user_ranges_dict[k + '_max'],
                 prop_models[k]['gui_units']
             ])
-            tol = (user_ranges_dict[k + '_max'] - user_ranges_dict[k + '_min']) * TOL_QUALITY
-            if user_ranges_dict[k + '_min'] - tol < v < user_ranges_dict[k + '_max'] + tol:
-                result_quality += 1
-
         return Response(
             json.dumps({
                 'vis_cif': ase_to_eq_cif(
                     result['structure'],
                     supply_sg=False,
-                    mpds_labs_loop=[result_quality] + aux_info
+                    mpds_labs_loop=[ result['grade'] ] + aux_info
                 ),
                 'props': answer_props,
                 'formula': html_formula(formula),
@@ -244,6 +262,7 @@ def design():
             ),
             content_type='application/json'
         )
+
     return fmt_msg(error)
 
 
