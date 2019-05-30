@@ -89,6 +89,8 @@ CREATE TABLE ml_knn (
     m   SMALLINT NOT NULL,
     d   SMALLINT NOT NULL,
     t   SMALLINT NOT NULL,
+    i   SMALLINT NOT NULL,
+    o   SMALLINT NOT NULL,
     els VARCHAR(19)
 );
 CREATE SEQUENCE ml_knn_id_seq START WITH 1 INCREMENT BY 1 NO MINVALUE NO MAXVALUE CACHE 1;
@@ -102,6 +104,8 @@ CREATE INDEX prop_w ON ml_knn USING btree(w);
 CREATE INDEX prop_m ON ml_knn USING btree(m);
 CREATE INDEX prop_d ON ml_knn USING btree(d);
 CREATE INDEX prop_t ON ml_knn USING btree(t);
+CREATE INDEX prop_i ON ml_knn USING btree(i);
+CREATE INDEX prop_o ON ml_knn USING btree(o);
 ```
 
 The full contents of this table can be provided by request. The found elements matching the given property ranges are used to compile a crystal structure based on the available MPDS structure prototypes (via the MPDS API). See `mpds_ml_labs/test_design_cmd.py`.

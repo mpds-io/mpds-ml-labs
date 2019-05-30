@@ -49,7 +49,9 @@ if MAX_DESIGN_MATCH:
         els_sample = els_samples.pop()
 
         sequence, error = materialize(els_sample, active_ml_models)
-        if error or not sequence:
+        if error:
+            break
+        if not sequence:
             continue
 
         result = score_grade(sequence, sample, range_tols)
@@ -65,7 +67,9 @@ else:
         if n_attempt > LIMIT_TOL: break
 
         sequence, error = materialize(els_sample, active_ml_models)
-        if error or not sequence:
+        if error:
+            break
+        if not sequence:
             continue
 
         results.append(score_grade(sequence, sample, range_tols))

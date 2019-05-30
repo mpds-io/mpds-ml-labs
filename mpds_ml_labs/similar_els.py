@@ -5,7 +5,7 @@ from pprint import pprint
 try: from urllib.parse import urlencode
 except ImportError: from urllib import urlencode
 
-import json
+import ujson as json
 import httplib2
 
 from prediction import prop_models, periodic_elements, periodic_numbers, ase_to_prediction

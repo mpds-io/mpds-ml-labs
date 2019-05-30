@@ -215,7 +215,9 @@ def design():
         els_sample = els_samples.pop()
 
         sequence, error = materialize(els_sample, active_ml_models)
-        if error or not sequence:
+        if error:
+            break
+        if not sequence:
             continue
 
         result = score_grade(sequence, user_ranges_dict, range_tols)
