@@ -10,4 +10,4 @@ imblearn
 treelite==0.32
 mpds_client
 progressbar
-pg8000==1.12.3
+pg8000==1.13.2
