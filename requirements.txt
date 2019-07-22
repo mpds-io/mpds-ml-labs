@@ -1,6 +1,6 @@
 httplib2==0.11.3
 ujson
-flask==1.0.3
+flask==1.1.1
 ase
 pycodcif==2.4
 spglib == 1.9.9
