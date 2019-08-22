@@ -4,7 +4,7 @@ flask==1.0.3
 ase
 pycodcif==2.4
 spglib == 1.9.9
-pandas==0.23.4
+pandas==0.25.1
 sklearn
 imblearn
 treelite==0.32
