@@ -114,7 +114,7 @@ def json_to_ase(datarow):
         return None, "ASE cannot handle structure"
 
 
-def refine(ase_obj, accuracy=1E-03):
+def refine(ase_obj, accuracy=1E-03, conventional_cell=False):
     """
     Refine ASE structure using spglib
 
@@ -128,13 +128,13 @@ def refine(ase_obj, accuracy=1E-03):
     """
     try:
         symmetry = spglib.get_spacegroup(ase_obj, symprec=accuracy)
-        lattice, positions, numbers = spglib.standardize_cell(ase_obj, symprec=accuracy, to_primitive=True, no_idealize=True)
+        lattice, positions, numbers = spglib.standardize_cell(ase_obj, symprec=accuracy, to_primitive=not conventional_cell)
     except:
         return None, 'Error while structure refinement'
 
     try:
         spacegroup = int( symmetry.split()[1].replace("(", "").replace(")", "") )
-    except (ValueError, IndexError):
+    except (ValueError, IndexError, AttributeError):
         return None, 'Symmetry error (coinciding atoms?) in structure'
 
     try:
@@ -146,7 +146,7 @@ def refine(ase_obj, accuracy=1E-03):
                 pbc=True
             ),
             spacegroup=spacegroup,
-            primitive_cell=True,
+            primitive_cell=not conventional_cell,
             onduplicates='replace'
         ), None
     except:
