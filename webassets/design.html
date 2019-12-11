@@ -23,7 +23,9 @@ div.cross{float:right;width:16px;height:16px;font-size:10px;text-align:center;cu
 div.title{width:100%;clear:both;text-align:center;font-size:1vw;line-height:2.5em;}
 div.snap{width:18%;text-align:center;font-size:0.85vw;}
 div.slider{width:64%;float:left;}
-#demo_trigger{width:10vh;margin:3vw auto 0.5vw;cursor:pointer;font-size:2vh;font-weight:normal;text-align:center;border:1px solid #3e3f95;background:#3e3f95;color:#fff;line-height:1.4em;border-radius:2px;text-decoration:none;box-shadow:inset 0 2px 2px rgba(255,255,255,0.3), inset 0 -2px 2px rgba(0,0,0,0.3), inset 0 20px 10px rgba(255,255,255,0.3), 0 0 2px 1px rgba(0,0,0,0.2), 0 2px 2px rgba(0,0,0,0.3);}
+#trigger_holder{text-align:center;width:100%;}
+div.trigger{display:inline-block;width:10vh;margin:2vw 2px 0.5vw;cursor:pointer;font-size:2vh;font-weight:normal;border:1px solid #3e3f95;background:#3e3f95;color:#fff;line-height:1.4em;border-radius:2px;text-decoration:none;box-shadow:inset 0 2px 2px rgba(255,255,255,0.3), inset 0 -2px 2px rgba(0,0,0,0.3), inset 0 20px 10px rgba(255,255,255,0.3), 0 0 2px 1px rgba(0,0,0,0.2), 0 2px 2px rgba(0,0,0,0.3);}
+#reset_trigger{border:1px solid #c00;background:#c00;}
 
 #results{display:none;position:absolute;z-index:200;width:30vw;height:auto;top:20px;left:50vw;margin-left:-15vw;margin-bottom:5vw;background:#fff;padding:0.5vw;border:1px solid #EAEAEA;box-shadow:0px 1px 1px 0px rgba(0,0,0,0.2);}
 #results ul li{list-style:none;display:block;width:100%;line-height:2em;border-top:1px solid #000;}
@@ -116,7 +118,10 @@ div.slider{width:64%;float:left;}
 <div id="panel">
     <strong>Select ranges:</strong>
     <ul id="sliders"></ul>
-    <div id="demo_trigger">Search</div>
+    <div id="trigger_holder">
+        <div id="demo_trigger" class="trigger">Search</div>
+        <div id="reset_trigger" class="trigger">Reset</div>
+    </div>
 </div>
 
 <div id="results"></div>
@@ -215,6 +220,7 @@ window.player_src = 'player.html';
 window.playerdata = null;
 window.buffer = {};
 
+window.search_stopper = false;
 window.disabled_w = false;
 window.xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
 
@@ -249,6 +255,7 @@ function iframe_post(url, iframe_target, vars_content){
 }
 
 function request_search(){
+    if (window.search_stopper) return;
     var numeric_search = [];
 
     for (var prop_id in window.prop_models){
@@ -506,6 +513,15 @@ function handle_info(payload, phid){
 
     // handler #7
     document.getElementById('demo_trigger').onclick = request_search;
+    document.getElementById('reset_trigger').onclick = function(){
+        window.search_stopper = true;
+        var sliders = document.getElementsByClassName('slider');
+        for (var i = 0; i < sliders.length; i++){
+            var srange = sliders[i].noUiSlider.options.range;
+            sliders[i].noUiSlider.set([srange.min, srange.max]);
+        }
+        window.search_stopper = false;
+    }
 })();
 </script>
 </body>
