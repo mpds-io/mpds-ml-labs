@@ -26,7 +26,7 @@ This is the proof of concept, how a relatively unsophisticated statistical model
 - linear thermal expansion coefficient
 - band gap (or its absence, _i.e._ whether a crystal is conductor or insulator)
 
-Further, a reverse task of predicting the possible crystalline structure from a set of given properties is solved. The suitable chemical elements are found, and the resulted structure is generated (if possible) based on the available MPDS prototypes.
+Further, a reverse task of predicting the possible crystalline structure from a set of given properties is solved. The suitable chemical elements are found, and the resulted structure is generated based on the MPDS prototype (if found).
 
 
 Installation
@@ -76,7 +76,7 @@ The term _descriptor_ stands for the compact information-rich representation, al
 
 As a machine-learning model an ensemble of decision trees ([random forest regressor](http://scikit-learn.org/stable/modules/ensemble.html)) is used, as implemented in [scikit-learn](http://scikit-learn.org) Python machine-learning toolkit. The whole MPDS dataset can be used for training. In order to estimate the prediction quality of the _regressor_ model, the _mean absolute error_ and _R2 coefficient of determination_ is saved. In order to estimate the prediction quality of the binary _classifier_ model, the _fraction incorrect_ (_i.e._ the _error percentage_) is saved. The evaluation process is repeated at least 30 times to achieve a statistical reliability.
 
-Generating the crystal structure from the physical properties is done as follows. The decision-tree properties predictions of nearly 115k distinct MPDS phases are used for the radius-based neighbor learning. This allows to extrapolate the possible chemical elements for almost any given combination of physical properties. The results of the neighbor learning are approximately 7.6M rows, stored in a Postgres table `ml_knn`:
+Generating the crystal structure from the physical properties is done as follows. The decision-tree properties predictions of nearly 115k distinct MPDS phases are used for the radius-based neighbor learning. This allows to extrapolate the possible chemical elements for almost any given combination of physical properties. The results of the neighbor learning are approximately 10M rows, stored in a Postgres table `ml_knn`:
 
 ```sql
 CREATE TABLE ml_knn (
@@ -121,6 +121,7 @@ For the local server:
 ```shell
 curl -XPOST http://localhost:5000/predict -d "structure=data_in_CIF_or_POSCAR"
 curl -XPOST http://localhost:5000/design -d "numerics=ranges_of_values_of_8_properties_in_JSON"
+curl -XPOST http://localhost:5000/design -d 'numerics={"z":[5,119],"y":[-325,0],"x":[22,28],"k":[-18,114],"w":[0.5,3.5],"m":[958,1816],"d":[464,777],"t":[33,50],"i":[4,16],"o":[3,42]}'
 ```
 
 For the demonstration MPDS server:
@@ -128,6 +129,7 @@ For the demonstration MPDS server:
 ```shell
 curl -XPOST https://labs.mpds.io/predict -d "structure=data_in_CIF_or_POSCAR"
 curl -XPOST https://labs.mpds.io/design -d "numerics=ranges_of_values_of_8_properties_in_JSON"
+curl -XPOST https://labs.mpds.io/design -d 'numerics={"z":[5,119],"y":[-325,0],"x":[22,28],"k":[-18,114],"w":[0.5,3.5],"m":[958,1816],"d":[464,777],"t":[33,50],"i":[4,16],"o":[3,42]}'
 ```
 
 
