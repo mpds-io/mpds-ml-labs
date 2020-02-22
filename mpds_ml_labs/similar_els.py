@@ -1,6 +1,7 @@
 
 from __future__ import division
 import logging
+import time
 from pprint import pprint
 try: from urllib.parse import urlencode
 except ImportError: from urllib import urlencode
@@ -8,10 +9,10 @@ except ImportError: from urllib import urlencode
 import ujson as json
 import httplib2
 
-from prediction import prop_models, periodic_elements, periodic_numbers, ase_to_prediction
-from prediction_ranges import prediction_ranges, RANGE_TOLERANCE
-from struct_utils import json_to_ase
-from common import API_KEY, ELS_ENDPOINT
+from mpds_ml_labs.prediction import prop_models, periodic_elements, periodic_numbers, ase_to_prediction
+from mpds_ml_labs.prediction_ranges import prediction_ranges, RANGE_TOLERANCE
+from mpds_ml_labs.struct_utils import json_to_ase
+from mpds_ml_labs.common import API_KEY, ELS_ENDPOINT
 
 
 __author__ = 'Evgeny Blokhin <eb@tilde.pro>'
@@ -95,7 +96,11 @@ def get_similar_structs(els_comb):
         headers={'Key': API_KEY}
     )
 
-    if response.status != 200:
+    if response.status == 429:
+        time.sleep(2)
+        return get_similar_structs(els_comb)
+
+    elif response.status != 200:
         return None, 'While similarity search an HTTP error %s occured' % response.status
 
     try:
