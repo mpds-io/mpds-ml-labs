@@ -3,7 +3,7 @@ httplib2
 ujson
 flask
 ase
-pycodcif
+pycodcif==2.6.0.1
 spglib
 pandas
 sklearn
