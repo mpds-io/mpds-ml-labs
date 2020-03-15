@@ -5,7 +5,7 @@ flask
 ase
 pycodcif
 spglib
-pandas
+pandas==1.0.2
 sklearn
 imblearn
 treelite==0.32
