@@ -2,7 +2,7 @@ numpy==1.16.6
 httplib2
 ujson
 flask
-ase
+ase==3.19.1
 pycodcif
 spglib
 pandas
