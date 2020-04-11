@@ -1,5 +1,5 @@
 numpy==1.16.6
-httplib2
+httplib2==0.17.2
 ujson
 flask
 ase
