@@ -8,7 +8,7 @@ spglib
 pandas
 sklearn
 imblearn
-treelite==0.32
+treelite==0.90
 mpds_client
 progressbar
 pg8000
