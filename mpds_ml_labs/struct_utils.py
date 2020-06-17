@@ -4,11 +4,7 @@ import random
 import itertools
 import fractions
 from functools import reduce
-
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
+from io import StringIO
 
 from ase.atoms import Atom, Atoms
 from ase.io.vasp import read_vasp
@@ -18,7 +14,7 @@ import spglib
 
 
 __author__ = 'Evgeny Blokhin <eb@tilde.pro>'
-__copyright__ = 'Copyright (c) 2018, Evgeny Blokhin, Tilde Materials Informatics'
+__copyright__ = 'Copyright (c) 2020, Evgeny Blokhin, Tilde Materials Informatics'
 __license__ = 'LGPL-2.1+'
 
 
@@ -233,10 +229,12 @@ def order_disordered(ase_obj):
             []
         )
     )
+    if min_occ == 0:
+        return None, 'Zero occupancy is encountered'
 
     needed_det = math.ceil(1. / min_occ)
     if needed_det * len(ase_obj) > MAX_ATOMS:
-        return None, 'Supercell size x%s is too big' % int(needed_det)
+        return None, 'Resulting crystal cell size is too big'
 
     diag = needed_det ** (1. / 3)
     supercell_matrix = [int(x) for x in (round(diag), math.ceil(diag), math.ceil(diag))]
@@ -261,6 +259,9 @@ def order_disordered(ase_obj):
                 if distrib_el == 'X':
                     del order_obj[n]
                 else:
-                    order_obj[n].symbol = distrib_el
+                    try:
+                        order_obj[n].symbol = distrib_el
+                    except KeyError as exc:
+                        return None, 'Unrecognized atom symbol: %s' % exc
 
     return order_obj, None

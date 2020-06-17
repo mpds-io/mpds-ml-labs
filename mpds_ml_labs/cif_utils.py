@@ -1,5 +1,6 @@
 
 import tempfile # used by pycodcif; FIXME
+import re
 
 import numpy as np
 
@@ -11,7 +12,7 @@ from ase.geometry import cell_to_cellpar
 
 
 __author__ = 'Evgeny Blokhin <eb@tilde.pro>'
-__copyright__ = 'Copyright (c) 2018, Evgeny Blokhin, Tilde Materials Informatics'
+__copyright__ = 'Copyright (c) 2020, Evgeny Blokhin, Tilde Materials Informatics'
 __license__ = 'LGPL-2.1+'
 
 
@@ -72,11 +73,14 @@ def cif_to_ase(cif_string):
             return None, 'Unexpected non-numerical values occured in CIF'
 
     symbols = parsed_cif.get('_atom_site_type_symbol')
+
     if not symbols:
         symbols = parsed_cif.get('_atom_site_label')
         if not symbols:
             return None, 'Cannot find atomic positions in CIF'
-        symbols = [char.encode('ascii').translate(None, ".0123456789") for char in symbols]
+
+    non_els = re.compile(r'[^a-zA-Z]')
+    symbols = [non_els.sub('', char) for char in symbols]
 
     occ_data = None
     if occupancies and any([occ != 1 for occ in occupancies]):
@@ -96,7 +100,10 @@ def cif_to_ase(cif_string):
 
     atom_data = []
     for n, xyz in enumerate(basis):
-        atom_data.append(Atom(symbols[n], tuple(xyz), tag=n))
+        try:
+            atom_data.append(Atom(symbols[n], tuple(xyz), tag=n))
+        except KeyError as exc:
+            return None, 'Unrecognized atom symbol: %s' % exc
 
     try:
         return crystal(
