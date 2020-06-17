@@ -272,12 +272,15 @@ function request_search(){
         } else if (prop_id == 't'){
             data[0] /= 100000;
             data[1] /= 100000;
+
+        } else if (prop_id == 'o'){
+            name = 'values of thermal conductivity';
         }
         numeric_search.push([name, '>', data[0]]);
         numeric_search.push([name, '<', data[1]]);
     }
 
-    window.xhr.abort();
+    //window.xhr.abort();
     window.xhr.onreadystatechange = function(){
         if (window.xhr.readyState == 4){
             document.getElementById('spinner').style.display = 'none';
@@ -302,7 +305,7 @@ function request_design(){
         numeric_search[prop_id] = data;
     }
 
-    window.xhr.abort();
+    //window.xhr.abort();
     window.xhr.onreadystatechange = function(){
         if (window.xhr.readyState == 4){
             document.getElementById('spinner').style.display = 'none';
@@ -470,7 +473,7 @@ function handle_info(payload, phid){
             event.target.parentNode.style.color = '#c00';
             var phid = event.target.getAttribute('rel');
 
-            window.xhr.abort();
+            //window.xhr.abort();
             window.xhr.onreadystatechange = function(){
                 if (window.xhr.readyState == 4){
                     if (window.xhr.status == 200) handle_info(window.xhr.responseText, phid);
