@@ -1,4 +1,4 @@
-numpy==1.16.6
+numpy
 httplib2
 ujson
 flask
@@ -8,7 +8,7 @@ spglib
 pandas
 sklearn
 imblearn
-treelite==0.32
+treelite
 mpds_client
 progressbar
 pg8000
