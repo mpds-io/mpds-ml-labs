@@ -207,7 +207,8 @@ def load_ml_models(prop_model_files, debug=True):
     ml_models = {}
     for file_name in prop_model_files:
         if not os.path.exists(file_name):
-            if debug: print("No file %s" % file_name)
+            if debug:
+                print("No file %s" % file_name)
             continue
 
         basename = file_name.split(os.sep)[-1]
@@ -225,9 +226,12 @@ def load_ml_models(prop_model_files, debug=True):
             model = cPickle.load(f)
             if hasattr(model, 'predict') and hasattr(model, 'metadata'):
                 ml_models[prop_id] = model
-                if debug: print("Model-%s %s metadata: %s" % (prop_id, basename, model.metadata))
+                if debug:
+                    print("Model-%s %s metadata: %s" % (prop_id, basename, model.metadata))
 
-    if debug: print("Loaded property models: %s" % len(ml_models))
+    if debug:
+        print("Loaded property models: %s" % len(ml_models))
+
     return ml_models
 
 
@@ -298,6 +302,11 @@ def ase_to_prediction(ase_obj, ml_models, prop_ids=False):
             for prop_id, pdata in sample.items():
                 avg_results.setdefault(prop_id, []).append(pdata['value'])
 
+        # testing
+        if not ml_models:
+            logging.warning('No models loaded, yielding zeros in testing purposes (disordered case)')
+            return {prop_id: {'value': 0, 'mae': 0, 'r2': 0} for prop_id in list(prop_models.keys())}, None
+
         for prop_id, values in avg_results.items():
             if prop_id == 'w' and values.count(0) == 1: # considering classifier error
                 values.remove(0)
@@ -337,7 +346,7 @@ def get_prediction(descriptor, ml_models, prop_ids=False):
     # testing
     if not ml_models:
         logging.warning('No models loaded, yielding zeros in testing purposes')
-        return {prop_id: {'value': 0, 'mae': 0, 'r2': 0} for prop_id in prop_ids}, None
+        return {prop_id: {'value': 0, 'mae': 0, 'r2': 0} for prop_id in list(prop_models.keys())}, None
 
     if not set(prop_ids).issubset(ml_models.keys()):
         return None, 'Unrecognized model: ' + ', '.join(prop_ids)

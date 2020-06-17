@@ -55,7 +55,7 @@ The model is trained on the MPDS data using the MPDS API and the scripts `train_
 The code tries to use the settings exemplified in a template:
 
 ```shell
-cp data/settings.ini.sample data/settings.ini
+cp data/settings.ini.sample mpds_ml_labs.ini
 ```
 
 

@@ -135,7 +135,7 @@ def ase_to_eq_cif(ase_obj, supply_sg=True, mpds_labs_loop=None):
         cif_data += ' _user_requested_max' + "\n"
         cif_data += ' _mpds_labs_units' + "\n"
         for deck in mpds_labs_loop[1:]:
-            cif_data += " " + " ".join(map(str, deck)) + "\n"
+            cif_data += " '" + "' '".join(map(str, deck)) + "'\n"
 
     parameters = cell_to_cellpar(ase_obj.cell)
     cif_data += '_cell_length_a    ' + "%2.6f" % parameters[0] + "\n"
@@ -150,9 +150,10 @@ def ase_to_eq_cif(ase_obj, supply_sg=True, mpds_labs_loop=None):
             getattr(ase_obj.info.get('spacegroup', object), 'symbol', 'P1'),
             getattr(ase_obj.info.get('spacegroup', object), 'no', 1)
         )
-    else: sg_string = ""
-    cif_data += sg_string
+    else:
+        sg_string = "_symmetry_space_group_name_H-M 'P1'\n_symmetry_Int_Tables_number 1\n"
 
+    cif_data += sg_string
     cif_data += '\nloop_' + "\n"
     cif_data += ' _symmetry_equiv_pos_as_xyz' + "\n"
     cif_data += ' +x,+y,+z' + "\n"

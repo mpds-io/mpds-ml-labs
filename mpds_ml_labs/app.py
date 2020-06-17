@@ -235,17 +235,18 @@ def design():
 
         if 'disordered' in result['structure'].info:
             result['structure'], error = order_disordered(result['structure'])
-            if error: return fmt_msg(error)
+            if error:
+                return fmt_msg(error)
             result['structure'].center(about=0.0)
 
         formula = get_formula(result['structure'])
 
         aux_info = []
-        for k, v in answer_props.items():
+        for k, value in answer_props.items():
             aux_info.append([
                 prop_models[k]['name'].replace(' ', '_'),
                 user_ranges_dict[k + '_min'],
-                v,
+                value,
                 user_ranges_dict[k + '_max'],
                 prop_models[k]['gui_units']
             ])

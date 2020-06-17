@@ -6,25 +6,23 @@ from struct_utils import order_disordered
 from knn_sample import knn_sample
 from similar_els import materialize, score_grade, score_abs
 from common import connect_database, ML_MODELS
-from cif_utils import ase_to_eq_cif
+from cif_utils import ase_to_eq_cif, cif_to_ase
 from prediction import prop_models, load_ml_models
 from prediction_ranges import prediction_ranges, RANGE_TOLERANCE
 
-
-MAX_DESIGN_MATCH = True
 
 result, error = None, "No results (outside of prediction capabilities)"
 sample = {}
 
 for prop_id in prediction_ranges:
     dice = random.choice([0, 1])
-    bound = (prediction_ranges[prop_id][1] - prediction_ranges[prop_id][0]) / 3
+    entire_range = prediction_ranges[prop_id][1] - prediction_ranges[prop_id][0]
     if dice:
-        sample[prop_id + '_min'] = float(prediction_ranges[prop_id][0] + bound * 2)
+        sample[prop_id + '_min'] = float(prediction_ranges[prop_id][0] + entire_range / 2)
         sample[prop_id + '_max'] = float(prediction_ranges[prop_id][1])
     else:
         sample[prop_id + '_min'] = float(prediction_ranges[prop_id][0])
-        sample[prop_id + '_max'] = float(prediction_ranges[prop_id][0] + bound)
+        sample[prop_id + '_max'] = float(prediction_ranges[prop_id][0] + entire_range / 2)
 
 range_tols = {
     prop_id: (sample[prop_id + '_max'] - sample[prop_id + '_min']) * RANGE_TOLERANCE
@@ -39,10 +37,10 @@ cursor, connection = connect_database()
 els_samples = knn_sample(cursor, sample)
 connection.close()
 
-results = []
+output = []
+MAX_DESIGN_MATCH = True
 
 if MAX_DESIGN_MATCH:
-    LIMIT_TOL = 1
     while len(els_samples):
 
         els_sample = els_samples.pop()
@@ -55,15 +53,15 @@ if MAX_DESIGN_MATCH:
 
         result = score_grade(sequence, sample, range_tols)
         if result['grade'] > 6:
-            results.append(result)
+            output.append(result)
 
-        if len(results) > LIMIT_TOL:
+        if len(output) > 1:
             break
 else:
-    LIMIT_TOL = 3
     for n_attempt, els_sample in enumerate(els_samples):
 
-        if n_attempt > LIMIT_TOL: break
+        if n_attempt > 3:
+            break
 
         sequence, error = materialize(els_sample, active_ml_models)
         if error:
@@ -71,11 +69,11 @@ else:
         if not sequence:
             continue
 
-        results.append(score_grade(sequence, sample, range_tols))
+        output.append(score_grade(sequence, sample, range_tols))
 
-if not results: raise RuntimeError(error)
+assert output, error
 
-result = score_abs(results, sample)
+result = score_abs(output, sample)
 
 answer_props = {prop_id: result['prediction'][prop_id]['value'] for prop_id in result['prediction']}
 
@@ -100,5 +98,9 @@ for k, v in answer_props.items():
         prop_models[k]['units']
     ])
 
-print(ase_to_eq_cif(result['structure'], supply_sg=False, mpds_labs_loop=[ result['grade'] ] + aux_info)[:1250])
+result_cif = ase_to_eq_cif(result['structure'], supply_sg=True, mpds_labs_loop=[ result['grade'] ] + aux_info)
+_, error = cif_to_ase(result_cif)
+assert not error, error
+print(result_cif[:1000])
+
 print("Done in %1.2f sc" % (time.time() - start_time))
