@@ -1,6 +1,5 @@
 
 import os, sys
-from math import exp
 
 import ujson as json
 

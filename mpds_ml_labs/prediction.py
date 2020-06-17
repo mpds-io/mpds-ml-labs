@@ -1,6 +1,6 @@
 
-from __future__ import division
 import os
+import logging
 
 import numpy as np
 
@@ -9,11 +9,11 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error, r2_score, confusion_matrix
 
 try: import treelite.runtime
-except ImportError: print('Compiled models not supported')
+except ImportError: logging.warning('Compiled models not supported')
 
 
 __author__ = 'Evgeny Blokhin <eb@tilde.pro>'
-__copyright__ = 'Copyright (c) 2018, Evgeny Blokhin, Tilde Materials Informatics'
+__copyright__ = 'Copyright (c) 2020, Evgeny Blokhin, Tilde Materials Informatics'
 __license__ = 'LGPL-2.1+'
 
 
@@ -202,10 +202,7 @@ def get_aligned_descriptor(ase_obj, kappa=None):
 
 def load_ml_models(prop_model_files, debug=True):
 
-    try:
-        import cPickle
-    except ImportError:
-        import _pickle as cPickle
+    import _pickle as cPickle
 
     ml_models = {}
     for file_name in prop_model_files:
@@ -339,6 +336,7 @@ def get_prediction(descriptor, ml_models, prop_ids=False):
 
     # testing
     if not ml_models:
+        logging.warning('No models loaded, yielding zeros in testing purposes')
         return {prop_id: {'value': 0, 'mae': 0, 'r2': 0} for prop_id in prop_ids}, None
 
     if not set(prop_ids).issubset(ml_models.keys()):

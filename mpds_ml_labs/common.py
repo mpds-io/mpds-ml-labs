@@ -1,12 +1,7 @@
 
 import os
-
-try:
-    from ConfigParser import ConfigParser
-    from urllib import urlencode
-except ImportError:
-    from configparser import ConfigParser
-    from urllib.parse import urlencode
+from configparser import ConfigParser
+from urllib.parse import urlencode
 
 import ujson as json
 import pg8000

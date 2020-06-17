@@ -3,6 +3,7 @@ import time
 import httplib2
 import ujson as json
 
+from cif_utils import cif_to_ase
 from common import make_request
 
 
@@ -31,5 +32,9 @@ if __name__ == '__main__':
     if 'error' in answer:
         raise RuntimeError(answer['error'])
 
-    print(answer['vis_cif'])
+    #print(answer['vis_cif'])
+    ase_obj, error = cif_to_ase(answer['vis_cif'])
+    if error:
+        raise RuntimeError(error)
+
     print("Done in %1.2f sc" % (time.time() - starttime))

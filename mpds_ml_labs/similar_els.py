@@ -1,10 +1,8 @@
 
-from __future__ import division
 import logging
 import time
-from pprint import pprint
-try: from urllib.parse import urlencode
-except ImportError: from urllib import urlencode
+#from pprint import pprint
+from urllib.parse import urlencode
 
 import ujson as json
 import httplib2
