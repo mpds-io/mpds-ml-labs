@@ -24,6 +24,8 @@ This is the proof of concept, how a relatively unsophisticated statistical model
 - Debye temperature
 - Seebeck coefficient
 - linear thermal expansion coefficient
+- electrical conductivity
+- thermal conductivity
 - band gap (or its absence, _i.e._ whether a crystal is conductor or insulator)
 
 Further, a reverse task of predicting the possible crystalline structure from a set of given properties is solved. The suitable chemical elements are found, and the resulted structure is generated based on the MPDS prototype (if found).
@@ -74,7 +76,7 @@ Used descriptor and model details
 
 The term _descriptor_ stands for the compact information-rich representation, allowing the convenient mathematical treatment of the encoded complex data (_i.e._ crystalline structure). Any crystalline structure is populated to a certain relatively big fixed volume of minimum one cubic nanometer. Then the descriptor is constructed using the periodic numbers of atoms and the lengths of their radius-vectors. The details are in the file `mpds_ml_labs/prediction.py`.
 
-As a machine-learning model an ensemble of decision trees ([random forest regressor](http://scikit-learn.org/stable/modules/ensemble.html)) is used, as implemented in [scikit-learn](http://scikit-learn.org) Python machine-learning toolkit. The whole MPDS dataset can be used for training. In order to estimate the prediction quality of the _regressor_ model, the _mean absolute error_ and _R2 coefficient of determination_ is saved. In order to estimate the prediction quality of the binary _classifier_ model, the _fraction incorrect_ (_i.e._ the _error percentage_) is saved. The evaluation process is repeated at least 30 times to achieve a statistical reliability.
+As a machine-learning model an ensemble of decision trees ([random forest regressor](http://scikit-learn.org/stable/modules/ensemble.html)) is used, as implemented in [scikit-learn](http://scikit-learn.org) Python machine-learning toolkit. The whole MPDS dataset can be used for training. To estimate the prediction quality of the _regressor_ model, the _mean absolute error_ and _R2 coefficient of determination_ is checked. To estimate the prediction quality of the binary _classifier_ model, the _fraction incorrect_ (_i.e._ the _error percentage_) is checked. The evaluation process is repeated at least 30 times to achieve a statistical reliability.
 
 Generating the crystal structure from the physical properties is done as follows. The decision-tree properties predictions of nearly 115k distinct MPDS phases are used for the radius-based neighbor learning. This allows to extrapolate the possible chemical elements for almost any given combination of physical properties. The results of the neighbor learning are approximately 10M rows, stored in a Postgres table `ml_knn`:
 
@@ -141,10 +143,10 @@ This project is built on top of the open-source scientific software, such as:
 - [scikit-learn](http://scikit-learn.org)
 - [pandas](https://pandas.pydata.org)
 - [ASE](https://wiki.fysik.dtu.dk/ase)
-- [pycodcif](http://wiki.crystallography.net/cod-tools/CIF-parser)
+- [pycodcif](https://wiki.crystallography.net/cod-tools/CIF-parser)
 - [spglib](https://atztogo.github.io/spglib)
-- [cifplayer](http://tilde-lab.github.io/player.html)
-- [MPDS API client](http://developer.mpds.io)
+- [cifplayer](https://tilde-lab.github.io/cifplayer)
+- [MPDS API client](https://developer.mpds.io)
 
 
 License
@@ -152,8 +154,8 @@ License
 
 - The client and the server code: *LGPL-2.1+*
 - The machine-learning MPDS data generated as presented here: *CC BY 4.0*
-- The open part of the experimental MPDS data (5%): *CC BY 4.0*
-- The closed part of the experimental MPDS data (95%): *commercial*
+- The open part of the experimental MPDS data (10%): *CC BY 4.0*
+- The closed part of the experimental MPDS data (90%): *commercial*
 
 
 Citation
