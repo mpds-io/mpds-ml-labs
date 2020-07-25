@@ -4,7 +4,7 @@ ujson
 flask
 ase
 pycodcif
-spglib
+spglib==1.15.1
 pandas
 sklearn
 imblearn
