@@ -1,6 +1,6 @@
 numpy
 httplib2
-ujson
+ujson==3.0.0
 flask
 ase
 pycodcif
