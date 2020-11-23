@@ -352,8 +352,7 @@ function handle_search(payload){
 function handle_info(payload, phid){
     payload = JSON.parse(payload);
     if (payload.error){
-        alert(payload.error);
-        return;
+        return alert(payload.error + "\r\nPlease, try again.");
     }
 
     if (phid)
