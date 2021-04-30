@@ -12,3 +12,4 @@ treelite
 mpds_client
 progressbar
 pg8000
+scikit-learn>=0.24.2 # not directly required, pinned by Snyk to avoid a vulnerability
