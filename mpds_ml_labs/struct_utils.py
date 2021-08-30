@@ -36,7 +36,7 @@ def detect_format(string):
         or lines[nline].strip().lower().startswith('cart'):
             return 'poscar'
 
-    if "links" in string and "immutable_id" in string and "cartesian_site_positions" in string:
+    if '"links"' in string and '"immutable_id"' in string and '"cartesian_site_positions"' in string:
         return 'optimade'
 
     return None
