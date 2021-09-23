@@ -6,6 +6,7 @@ import fractions
 from functools import reduce
 from io import StringIO
 
+import ujson as json
 from ase.atoms import Atom, Atoms
 from ase.io.vasp import read_vasp
 from ase.spacegroup import crystal
@@ -36,7 +37,7 @@ def detect_format(string):
         or lines[nline].strip().lower().startswith('cart'):
             return 'poscar'
 
-    if '"links"' in string and '"immutable_id"' in string and '"cartesian_site_positions"' in string:
+    if '"immutable_id"' in string and '"cartesian_site_positions"' in string and '"lattice_vectors"' in string:
         return 'optimade'
 
     return None
@@ -109,8 +110,47 @@ def json_to_ase(datarow):
             onduplicates='error',
             info=dict(disordered=occ_data) if occ_data else {}
         ), None
-    except:
-        return None, "ASE cannot handle structure"
+    except Exception as ex:
+        return None, "ASE cannot handle structure: %s" % ex
+
+
+def optimade_to_ase(structure):
+    """
+    A very permissive Optimade format support
+    so far without the disordered structures
+
+    Returns:
+        ASE Atoms (object) *or* None
+        None *or* error (str)
+    """
+    if type(structure) == str:
+        structure = json.loads(structure)
+
+    if 'data' in structure and type(structure['data']) == list and len(structure['data']):
+        structure = structure['data'][0]
+
+    basis, symbols = [], []
+
+    if 'species' not in structure['attributes']:
+        return None, "Atoms missing"
+
+    for n, specie in enumerate(structure['attributes']['species']):
+
+        if len(specie['chemical_symbols']) > 1:
+            if 'concentration' not in specie:
+                return None, "Atomic disorder data incomplete"
+
+            return None, "Structural disorder is not supported"
+
+        symbols.append(specie['chemical_symbols'][0])
+        basis.append(structure['attributes']['cartesian_site_positions'][n])
+
+    return Atoms(
+        symbols=symbols,
+        positions=basis,
+        cell=structure['attributes']['lattice_vectors'],
+        pbc=structure['attributes'].get('dimension_types') or True
+    ), None
 
 
 def refine(ase_obj, accuracy=1E-03, conventional_cell=False):
