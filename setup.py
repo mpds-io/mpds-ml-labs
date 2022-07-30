@@ -11,5 +11,5 @@ setup(
     install_requires=[
         'mpds_client', 'pycodcif', 'spglib', 'sklearn', 'imblearn', 'progressbar', 'pg8000'
     ],
-    python_requires='>=3.5'
+    python_requires='>=3.5,<3.9'
 )
