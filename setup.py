@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name='mpds_ml_labs',
-    version='0.0.6',
+    version='0.0.7',
     author='Evgeny Blokhin',
     author_email='eb@tilde.pro',
     license='LGPL-2.1',

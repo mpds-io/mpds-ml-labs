@@ -2,7 +2,6 @@
 import math
 import random
 import itertools
-import fractions
 from functools import reduce
 from io import StringIO
 
@@ -203,7 +202,7 @@ def get_formula(ase_obj, find_gcd=True, as_dict=False):
         else:
             parsed_formula[label] += 1
 
-    expanded = reduce(fractions.gcd, parsed_formula.values()) if find_gcd else 1
+    expanded = reduce(math.gcd, parsed_formula.values()) if find_gcd else 1
     if expanded > 1:
         parsed_formula = {el: int(content / float(expanded))
                         for el, content in parsed_formula.items()}
