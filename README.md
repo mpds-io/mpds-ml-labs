@@ -2,8 +2,11 @@ Data-driven predictions: from crystal structure to physical properties and vice 
 ======
 
 [![DOI](https://zenodo.org/badge/110734326.svg)](https://zenodo.org/badge/latestdoi/110734326)
+[![arXiv](https://img.shields.io/badge/arXiv-1806.03553-b31b1b.svg)](https://arxiv.org/abs/1806.03553)
 
 ![Materials simulations ab datum](https://raw.githubusercontent.com/mpds-io/mpds-ml-labs/master/crystallographer_mpds_cc_by_40.png "Materials simulation ab datum")
+
+This is the repository for the work ["Quantitative trends in 8 physical properties of 115000 inorganic compounds gained by machine learning"](https://arxiv.org/abs/1806.03553) by Blokhin and Villars (**2018**).
 
 
 Live demos
