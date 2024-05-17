@@ -9,7 +9,7 @@ setup(
     license='LGPL-2.1',
     packages=['mpds_ml_labs'],
     install_requires=[
-        'mpds_client', 'pycodcif', 'spglib', 'sklearn', 'imblearn', 'progressbar', 'pg8000'
+        'mpds_client', 'pycodcif', 'spglib', 'scikit-learn', 'imblearn', 'progressbar', 'pg8000'
     ],
     python_requires='>=3.5'
 )

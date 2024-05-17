@@ -6,7 +6,7 @@ ase
 pycodcif
 spglib
 pandas
-sklearn
+scikit-learn
 imblearn
 treelite
 mpds_client
